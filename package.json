@@ -1,19 +1,21 @@
 {
   "name": "medical-rep-system",
   "version": "1.0.0",
-  "main": "app.js",
+  "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node .",
-    "dev": "nodemon ."
+    "dev": "nodemon .",
+    "prisma:generate": "npx prisma generate",
+    "prisma:migrate": "npx prisma migrate dev"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^6.17.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0"
   },
-  "devDependencies": {},
   "description": ""
 }
