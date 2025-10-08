@@ -7,7 +7,7 @@
     "start": "node .",
     "dev": "nodemon .",
     "prisma:generate": "npx prisma generate",
-    "prisma:migrate": "npx prisma migrate dev"
+    "prisma:migrate": "npx prisma migrate dev --name"
   },
   "keywords": [],
   "author": "",

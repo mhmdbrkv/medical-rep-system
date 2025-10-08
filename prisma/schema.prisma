@@ -13,3 +13,237 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// ------------------ USERS & ROLES ------------------
+model User {
+  id       Int     @id @default(autoincrement())
+  name     String
+  email    String  @unique
+  password String
+  phone    String?
+  role     Role    @default(MEDICAL_REP)
+  regionId Int?
+  region   Region? @relation(fields: [regionId], references: [id])
+
+  // Hierarchy
+  managerId    Int?
+  supervisorId Int?
+
+  // Manager → Supervisors (1 → many)
+  manager     User?  @relation("ManagerToSupervisors", fields: [managerId], references: [id])
+  supervisors User[] @relation("ManagerToSupervisors")
+
+  // Supervisor → Medical Reps (1 → many)
+  supervisor User?  @relation("SupervisorToReps", fields: [supervisorId], references: [id])
+  reps       User[] @relation("SupervisorToReps")
+
+  // Relations
+  sales        Sale[]
+  visits       Visit[]
+  plans        Plan[]
+  reports      Report[]
+  targets      Target[]
+  activityLogs ActivityLog[]
+
+  // Requests created by this user (Medical Rep)
+  createdRequests Request[] @relation("UserRequests")
+
+  // Approvals given by this user (Supervisor or Manager)
+  approvals Approval[] @relation("UserApprovals")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  MANAGER
+  SUPERVISOR
+  MEDICAL_REP
+}
+
+// ------------------ REGIONS ------------------
+model Region {
+  id      Int      @id @default(autoincrement())
+  name    String
+  city    String
+  country String
+  users   User[]
+  clients Client[]
+}
+
+// ------------------ CLIENTS (Doctors & Pharmacies) ------------------
+model Client {
+  id        Int        @id @default(autoincrement())
+  name      String
+  type      ClientType
+  phone     String?
+  location  String? // Optional Google Maps link
+  latitude  Float
+  longitude Float
+  regionId  Int
+  region    Region     @relation(fields: [regionId], references: [id])
+  sales     Sale[]
+  visits    Visit[]
+  createdAt DateTime   @default(now())
+}
+
+enum ClientType {
+  DOCTOR
+  PHARMACY
+}
+
+// ------------------ PRODUCTS ------------------
+model Product {
+  id           Int           @id @default(autoincrement())
+  name         String
+  category     String?
+  price        Float
+  planProducts PlanProduct[]
+  sales        Sale[]
+  promotions   Promotion[]
+}
+
+// ------------------ PLANS ------------------
+model Plan {
+  id           Int           @id @default(autoincrement())
+  title        String
+  description  String?
+  startDate    DateTime
+  endDate      DateTime
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id])
+  planProducts PlanProduct[]
+  targets      Target[]
+}
+
+model PlanProduct {
+  id        Int     @id @default(autoincrement())
+  planId    Int
+  productId Int
+  plan      Plan    @relation(fields: [planId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+// ------------------ SALES ------------------
+model Sale {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  clientId   Int
+  userId     Int
+  quantity   Int
+  totalPrice Float
+  saleDate   DateTime @default(now())
+  product    Product  @relation(fields: [productId], references: [id])
+  client     Client   @relation(fields: [clientId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+// ------------------ VISITS ------------------
+model Visit {
+  id           Int         @id @default(autoincrement())
+  userId       Int
+  clientId     Int
+  date         DateTime    @default(now())
+  repLatitude  Float?
+  repLongitude Float?
+  status       VisitStatus @default(PENDING)
+  notes        String?
+  user         User        @relation(fields: [userId], references: [id])
+  client       Client      @relation(fields: [clientId], references: [id])
+}
+
+enum VisitStatus {
+  PENDING
+  COMPLETED
+  MISSED
+}
+
+// ------------------ TARGETS ------------------
+model Target {
+  id       Int   @id @default(autoincrement())
+  userId   Int
+  planId   Int
+  goal     Float
+  achieved Float @default(0)
+  user     User  @relation(fields: [userId], references: [id])
+  plan     Plan  @relation(fields: [planId], references: [id])
+}
+
+// ------------------ REPORTS ------------------
+model Report {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// ------------------ PROMOTIONS ------------------
+model Promotion {
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  description String
+  discount    Float
+  startDate   DateTime
+  endDate     DateTime
+  product     Product  @relation(fields: [productId], references: [id])
+}
+
+// ------------------ LOGGING ------------------
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Request {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  supervisorId Int?
+  managerId    Int?
+  type         RequestType
+  status       RequestStatus @default(PENDING)
+  title        String
+  description  String?
+  amount       Float?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  user      User       @relation("UserRequests", fields: [userId], references: [id])
+  approvals Approval[]
+}
+
+enum RequestType {
+  EXPENSE // مصاريف
+  MARKETING // دعم تسويقي
+  SAMPLE // عينات
+  LEAVE // إجازة
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  UNDER_REVIEW
+}
+
+model Approval {
+  id           Int            @id @default(autoincrement())
+  requestId    Int
+  approvedById Int
+  role         Role
+  action       ApprovalAction
+  comment      String?
+  createdAt    DateTime       @default(now())
+
+  approvedBy User    @relation("UserApprovals", fields: [approvedById], references: [id])
+  request    Request @relation(fields: [requestId], references: [id])
+}
+
+enum ApprovalAction {
+  APPROVE
+  REJECT
+}
