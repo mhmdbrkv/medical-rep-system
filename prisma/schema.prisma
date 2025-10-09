@@ -84,29 +84,29 @@ enum ClientType {
 
 // ------------------ PRODUCTS ------------------
 model Product {
-  id           String        @id @default(uuid())
-  name         String
-  category     String?
-  price        Float
-  planProducts PlanProduct[]
-  sales        Sale[]
-  promotions   Promotion[]
+  id         String      @id @default(uuid())
+  name       String
+  category   String?
+  price      Float
+  plans      Plan[]
+  sales      Sale[]
+  promotions Promotion[]
 }
 
 // ------------------ PLANS ------------------
 model Plan {
-  id           String        @id @default(uuid())
-  title        String
-  description  String?
-  startDate    DateTime
-  endDate      DateTime
-  createdById  String
-  createdBy    User          @relation(fields: [createdById], references: [id])
-  planDays     PlanDay[]
-  planProducts PlanProduct[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  Target       Target[]
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  planDays    PlanDay[]
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Target      Target[]
 }
 
 model PlanDay {
@@ -117,14 +117,6 @@ model PlanDay {
   plan   Plan     @relation(fields: [planId], references: [id])
   rep    User     @relation(fields: [repId], references: [id])
   visits Visit[]
-}
-
-model PlanProduct {
-  id        String  @id @default(uuid())
-  planId    String
-  productId String
-  plan      Plan    @relation(fields: [planId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
 }
 
 // ------------------ SALES ------------------

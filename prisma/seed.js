@@ -106,8 +106,8 @@ async function main() {
       startDate: new Date("2025-10-06"),
       endDate: new Date("2025-10-12"),
       createdById: manager.id,
-      planProducts: {
-        create: [{ productId: productA.id }, { productId: productB.id }],
+      products: {
+        connect: [{ id: productA.id }, { id: productB.id }],
       },
     },
   });
