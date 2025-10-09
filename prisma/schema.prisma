@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -15,44 +14,35 @@ datasource db {
 }
 
 // ------------------ USERS & ROLES ------------------
+
 model User {
-  id       Int     @id @default(autoincrement())
+  id       String  @id @default(uuid())
   name     String
   email    String  @unique
   password String
   phone    String?
   role     Role    @default(MEDICAL_REP)
-  regionId Int?
+  regionId String?
   region   Region? @relation(fields: [regionId], references: [id])
 
   // Hierarchy
-  managerId    Int?
-  supervisorId Int?
-
-  // Manager → Supervisors (1 → many)
-  manager     User?  @relation("ManagerToSupervisors", fields: [managerId], references: [id])
-  supervisors User[] @relation("ManagerToSupervisors")
-
-  // Supervisor → Medical Reps (1 → many)
-  supervisor User?  @relation("SupervisorToReps", fields: [supervisorId], references: [id])
-  reps       User[] @relation("SupervisorToReps")
+  supervisorId String? // Reps belong to a supervisor
+  supervisor   User?   @relation("SupervisorToReps", fields: [supervisorId], references: [id])
+  reps         User[]  @relation("SupervisorToReps")
 
   // Relations
   sales        Sale[]
   visits       Visit[]
-  plans        Plan[]
   reports      Report[]
   targets      Target[]
+  requests     Request[]     @relation("UserRequests")
+  approvals    Approval[]    @relation("UserApprovals")
   activityLogs ActivityLog[]
 
-  // Requests created by this user (Medical Rep)
-  createdRequests Request[] @relation("UserRequests")
-
-  // Approvals given by this user (Supervisor or Manager)
-  approvals Approval[] @relation("UserApprovals")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Plan      Plan[]
+  PlanDay   PlanDay[]
 }
 
 enum Role {
@@ -63,7 +53,7 @@ enum Role {
 
 // ------------------ REGIONS ------------------
 model Region {
-  id      Int      @id @default(autoincrement())
+  id      String   @id @default(uuid())
   name    String
   city    String
   country String
@@ -73,14 +63,14 @@ model Region {
 
 // ------------------ CLIENTS (Doctors & Pharmacies) ------------------
 model Client {
-  id        Int        @id @default(autoincrement())
+  id        String     @id @default(uuid())
   name      String
   type      ClientType
   phone     String?
   location  String? // Optional Google Maps link
   latitude  Float
   longitude Float
-  regionId  Int
+  regionId  String
   region    Region     @relation(fields: [regionId], references: [id])
   sales     Sale[]
   visits    Visit[]
@@ -94,7 +84,7 @@ enum ClientType {
 
 // ------------------ PRODUCTS ------------------
 model Product {
-  id           Int           @id @default(autoincrement())
+  id           String        @id @default(uuid())
   name         String
   category     String?
   price        Float
@@ -105,31 +95,44 @@ model Product {
 
 // ------------------ PLANS ------------------
 model Plan {
-  id           Int           @id @default(autoincrement())
+  id           String        @id @default(uuid())
   title        String
   description  String?
   startDate    DateTime
   endDate      DateTime
-  userId       Int
-  user         User          @relation(fields: [userId], references: [id])
+  createdById  String
+  createdBy    User          @relation(fields: [createdById], references: [id])
+  planDays     PlanDay[]
   planProducts PlanProduct[]
-  targets      Target[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  Target       Target[]
+}
+
+model PlanDay {
+  id     String   @id @default(uuid())
+  planId String
+  repId  String
+  date   DateTime
+  plan   Plan     @relation(fields: [planId], references: [id])
+  rep    User     @relation(fields: [repId], references: [id])
+  visits Visit[]
 }
 
 model PlanProduct {
-  id        Int     @id @default(autoincrement())
-  planId    Int
-  productId Int
+  id        String  @id @default(uuid())
+  planId    String
+  productId String
   plan      Plan    @relation(fields: [planId], references: [id])
   product   Product @relation(fields: [productId], references: [id])
 }
 
 // ------------------ SALES ------------------
 model Sale {
-  id         Int      @id @default(autoincrement())
-  productId  Int
-  clientId   Int
-  userId     Int
+  id         String   @id @default(uuid())
+  productId  String
+  clientId   String
+  userId     String
   quantity   Int
   totalPrice Float
   saleDate   DateTime @default(now())
@@ -140,16 +143,18 @@ model Sale {
 
 // ------------------ VISITS ------------------
 model Visit {
-  id           Int         @id @default(autoincrement())
-  userId       Int
-  clientId     Int
-  date         DateTime    @default(now())
+  id           String      @id @default(uuid())
+  repId        String
+  clientId     String
+  planDayId    String?
+  visitDate    DateTime
   repLatitude  Float?
   repLongitude Float?
   status       VisitStatus @default(PENDING)
-  notes        String?
-  user         User        @relation(fields: [userId], references: [id])
+  distance     Float? // calculated distance between rep and client
   client       Client      @relation(fields: [clientId], references: [id])
+  rep          User        @relation(fields: [repId], references: [id])
+  planDay      PlanDay?    @relation(fields: [planDayId], references: [id])
 }
 
 enum VisitStatus {
@@ -160,19 +165,19 @@ enum VisitStatus {
 
 // ------------------ TARGETS ------------------
 model Target {
-  id       Int   @id @default(autoincrement())
-  userId   Int
-  planId   Int
+  id       String @id @default(uuid())
+  userId   String
+  planId   String
   goal     Float
-  achieved Float @default(0)
-  user     User  @relation(fields: [userId], references: [id])
-  plan     Plan  @relation(fields: [planId], references: [id])
+  achieved Float  @default(0)
+  user     User   @relation(fields: [userId], references: [id])
+  plan     Plan   @relation(fields: [planId], references: [id])
 }
 
 // ------------------ REPORTS ------------------
 model Report {
-  id        Int      @id @default(autoincrement())
-  userId    Int
+  id        String   @id @default(uuid())
+  userId    String
   title     String
   content   String
   createdAt DateTime @default(now())
@@ -181,8 +186,8 @@ model Report {
 
 // ------------------ PROMOTIONS ------------------
 model Promotion {
-  id          Int      @id @default(autoincrement())
-  productId   Int
+  id          String   @id @default(uuid())
+  productId   String
   description String
   discount    Float
   startDate   DateTime
@@ -192,18 +197,19 @@ model Promotion {
 
 // ------------------ LOGGING ------------------
 model ActivityLog {
-  id        Int      @id @default(autoincrement())
-  userId    Int
+  id        String   @id @default(uuid())
+  userId    String
   action    String
   timestamp DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
 }
 
+// ------------------ Request ------------------
 model Request {
-  id           Int           @id @default(autoincrement())
-  userId       Int
-  supervisorId Int?
-  managerId    Int?
+  id           String        @id @default(uuid())
+  userId       String
+  supervisorId String?
+  managerId    String?
   type         RequestType
   status       RequestStatus @default(PENDING)
   title        String
@@ -230,10 +236,11 @@ enum RequestStatus {
   UNDER_REVIEW
 }
 
+// ------------------ Approval ------------------
 model Approval {
-  id           Int            @id @default(autoincrement())
-  requestId    Int
-  approvedById Int
+  id           String         @id @default(uuid())
+  requestId    String
+  approvedById String
   role         Role
   action       ApprovalAction
   comment      String?
