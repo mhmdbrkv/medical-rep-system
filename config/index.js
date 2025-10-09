@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const PORT = process.env.PORT || 5050;
-const CLIENT_URL = process.env.CLIENT_URL || "";
+const CLIENT_URL = process.env.CLIENT_URL;
 const MANAGER_EMAIL = process.env.MANAGER_EMAIL || "";
 const MANAGER_PASSWORD = process.env.MANAGER_PASSWORD || "";
 const DATABASE_URL = process.env.DATABASE_URL || "";

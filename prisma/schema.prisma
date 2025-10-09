@@ -20,7 +20,7 @@ model User {
   name     String
   email    String  @unique
   password String
-  phone    String?
+  phone    String
   role     Role    @default(MEDICAL_REP)
   regionId String?
   region   Region? @relation(fields: [regionId], references: [id])
@@ -46,7 +46,6 @@ model User {
 }
 
 enum Role {
-  MANAGER
   SUPERVISOR
   MEDICAL_REP
 }

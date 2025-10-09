@@ -1,8 +1,9 @@
 import JWT from "jsonwebtoken";
 import ApiError from "../utils/apiError.js";
-import User from "../models/user.model.js";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
-export const guard = asyncHandler(async (req, res, next) => {
+export const guard = async (req, res, next) => {
   // 1) Check if token exists in request
   let token = null;
 
@@ -27,7 +28,17 @@ export const guard = asyncHandler(async (req, res, next) => {
     const decoded = await JWT.verify(token, process.env.JWT_ACCESS_SECRET_KEY);
 
     // 4) Find the user based on decoded token
-    const loggedUser = await User.findById(decoded.userId).select("-password");
+    const loggedUser = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        supervisorId: true,
+      },
+    });
 
     if (!loggedUser) {
       return next(new ApiError("User not found", 404));
@@ -48,12 +59,13 @@ export const guard = asyncHandler(async (req, res, next) => {
       )
     );
   }
-});
+};
 
-export const allowedTo = (...roles) =>
-  asyncHandler(async (req, res, next) => {
+export const allowedTo =
+  (...roles) =>
+  async (req, res, next) => {
     if (!roles.includes(req.user.role))
       throw next(new ApiError("Access Denied - Admin Only", 403));
 
     next();
-  });
+  };
