@@ -5,10 +5,179 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+
+// ------------------ USERS & ROLES ------------------
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  phone     String
+  gender    String?
+  lastLogin DateTime?
+  role      Role      @default(MEDICAL_REP)
+
+  // Hierarchy
+  supervisorId String? // Reps belong to a supervisor
+  supervisor   User?   @relation("SupervisorToReps", fields: [supervisorId], references: [id])
+  reps         User[]  @relation("SupervisorToReps")
+
+  // Relations
+  region    Region?
+  SubRegion SubRegion?
+  visits    Visit[]
+  requests  Request[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  MANAGER
+  SUPERVISOR
+  MEDICAL_REP
+}
+
+// ------------------ REGIONS ------------------
+model Region {
+  id      String @id @default(uuid())
+  name    String
+  country String
+
+  supervisorId String?     @unique
+  supervisor   User?       @relation(fields: [supervisorId], references: [id])
+  subRegions   SubRegion[]
+  clients      Client[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SubRegion {
+  id       String  @id @default(uuid())
+  name     String
+  regionId String  @unique
+  repId    String? @unique
+
+  region Region @relation(fields: [regionId], references: [id])
+  rep    User?  @relation(fields: [repId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ------------------ CLIENTS ------------------
+model Client {
+  id          String     @id @default(uuid())
+  name        String
+  type        ClientType @default(DOCTOR)
+  phone       String
+  email       String     @unique
+  isActive    Boolean    @default(true)
+  notes       String?
+  locationUrl String? // Optional Google Maps link
+  latitude    Float
+  longitude   Float
+  regionId    String
+  region      Region     @relation(fields: [regionId], references: [id])
+  visits      Visit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ClientType {
+  DOCTOR
+  PHARMACY
+}
+
+// ------------------ VISITS ------------------
+model Visit {
+  id              String         @id @default(uuid())
+  repId           String
+  clientId        String
+  scheduledDate   DateTime
+  actualVisitDate DateTime?
+  repLatitude     Float?
+  repLongitude    Float?
+  repLocationUrl  String?
+  distance        Float?
+  notes           String?
+  productVisit    ProductVisit[]
+  status          VisitStatus    @default(SCHEDULED)
+
+  rep    User   @relation(fields: [repId], references: [id])
+  client Client @relation(fields: [clientId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum VisitStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+model Product {
+  id           String         @id @default(uuid())
+  name         String
+  quantity     Int
+  unitPrice    Float
+  inStock      Boolean        @default(true)
+  productVisit ProductVisit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductVisit {
+  id        String @id @default(uuid())
+  productId String
+  visitId   String
+
+  product Product @relation(fields: [productId], references: [id])
+  visit   Visit   @relation(fields: [visitId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ------------------ REQUESTS ------------------
+model Request {
+  id           String        @id @default(uuid())
+  userId       String
+  type         RequestType
+  status       RequestStatus @default(PENDING)
+  title        String
+  description  String?
+  amount       Float?
+  decisionNote String?
+  handledAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum RequestType {
+  EXPENSE // مصاريف
+  MARKETING // دعم تسويقي
+  SAMPLE // عينات
+  LEAVE // إجازة
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
