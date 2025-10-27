@@ -6,7 +6,7 @@ import helmet from "helmet";
 
 import ApiError from "./utils/apiError.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
-// import mountRoutes from "./routes/index.js";
+import mountRoutes from "./routes/index.js";
 import { PORT, CLIENT_URL, NODE_ENV } from "./config/index.js";
 
 const app = express();
@@ -37,7 +37,7 @@ app.get("/", (req, res) => {
 });
 
 // Mount Routes
-// mountRoutes(app);
+mountRoutes(app);
 
 app.use((req, res, next) => {
   next(new ApiError("Route not found", 404));

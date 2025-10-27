@@ -1,4 +1,5 @@
-import moduleName from "module";
+import authRoutes from "./auth.route.js";
+
 export default (app) => {
-  app.use("/", moduleName);
+  app.use("/api/auth", authRoutes);
 };
