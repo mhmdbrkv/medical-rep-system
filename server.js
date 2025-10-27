@@ -4,8 +4,8 @@ import morgan from "morgan";
 import compression from "compression";
 import helmet from "helmet";
 
-// import ApiError from "./utils/apiError.js";
-// import errorMiddleware from "./middlewares/error.middleware.js";
+import ApiError from "./utils/apiError.js";
+import errorMiddleware from "./middlewares/error.middleware.js";
 // import mountRoutes from "./routes/index.js";
 import { PORT, CLIENT_URL, NODE_ENV } from "./config/index.js";
 
@@ -44,7 +44,7 @@ app.use((req, res, next) => {
 });
 
 // Global Error Handling Inside Express
-// app.use(errorMiddleware);
+app.use(errorMiddleware);
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
