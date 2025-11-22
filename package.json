@@ -8,7 +8,7 @@
     "dev": "nodemon .",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev"
-  },  
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -23,7 +23,8 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "prisma": "^7.0.0"
   },
   "description": ""
 }

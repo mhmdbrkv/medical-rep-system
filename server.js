@@ -40,7 +40,7 @@ app.get("/", (req, res) => {
 mountRoutes(app);
 
 app.use((req, res, next) => {
-  next(new ApiError("Route not found", 404));
+  next(new ApiError(`Route ${req.originalUrl} not found`, 404));
 });
 
 // Global Error Handling Inside Express
