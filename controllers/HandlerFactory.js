@@ -53,10 +53,4 @@ const deleteOne = (Model) => async (req, res) => {
   });
 };
 
-export default {
-  getAll,
-  getOne,
-  createOne,
-  updateOne,
-  deleteOne,
-};
+export { getAll, getOne, createOne, updateOne, deleteOne };

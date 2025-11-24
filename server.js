@@ -4,7 +4,7 @@ import morgan from "morgan";
 import compression from "compression";
 import helmet from "helmet";
 
-import ApiError from "./utils/apiError.js";
+import ApiError from "./utils/ApiError.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import mountRoutes from "./routes/index.js";
 import { PORT, CLIENT_URL, NODE_ENV } from "./config/index.js";
@@ -26,15 +26,8 @@ if (NODE_ENV === "development") {
 app.use(helmet());
 // app.use(cors(corsOptions));
 app.use(compression());
-app.use(express.json({ limit: "20kb" })); // allows you to parse the body of the request
+app.use(express.json({ limit: "20kb" }));
 app.use(express.urlencoded({ extended: true }));
-
-app.get("/", (req, res) => {
-  res.status(200).json({
-    status: "success",
-    message: "Welcome to the Golderapharm CRM API",
-  });
-});
 
 // Mount Routes
 mountRoutes(app);

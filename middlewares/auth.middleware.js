@@ -1,5 +1,5 @@
 import JWT from "jsonwebtoken";
-import ApiError from "../utils/apiError.js";
+import ApiError from "../utils/ApiError.js";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
