@@ -1,12 +1,10 @@
 import bcrypt from "bcrypt";
 import ApiError from "../utils/ApiError.js";
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
-
+import { prisma } from "../config/db.js";
 import { generateAccessToken } from "../utils/jwtToken.js";
 
 // Login
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   const { email, password } = req.body;
 
   // find the user by email
@@ -34,4 +32,41 @@ const login = async (req, res) => {
   });
 };
 
-export { login };
+// Signup
+const signup = async (req, res, next) => {
+  const { name, email, password, phone, position } = req.body;
+
+  // find the user by email
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+  if (user) {
+    return next(new ApiError(`User with email: ${email} already exists`, 400));
+  }
+
+  // hash password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // create user
+  const newUser = await prisma.user.create({
+    data: {
+      name,
+      email,
+      password: hashedPassword,
+      phone,
+      position,
+    },
+  });
+
+  // generate JWT
+  const accessToken = generateAccessToken(newUser.id);
+
+  res.status(201).json({
+    status: "success",
+    message: "User created successfully",
+    data: newUser,
+    token: accessToken,
+  });
+};
+
+export { login, signup };

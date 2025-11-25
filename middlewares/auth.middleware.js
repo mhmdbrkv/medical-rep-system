@@ -1,7 +1,6 @@
 import JWT from "jsonwebtoken";
 import ApiError from "../utils/ApiError.js";
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+const { prisma } = import("../config/db.js");
 
 const guard = async (req, res, next) => {
   // 1) Check if token exists in request
