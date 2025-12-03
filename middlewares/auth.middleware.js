@@ -1,6 +1,8 @@
 import JWT from "jsonwebtoken";
 import ApiError from "../utils/ApiError.js";
-const { prisma } = import("../config/db.js");
+import { prisma } from "../config/db.js";
+
+import { JWT_ACCESS_SECRET_KEY } from "../config/index.js";
 
 const guard = async (req, res, next) => {
   // 1) Check if token exists in request
@@ -24,7 +26,7 @@ const guard = async (req, res, next) => {
 
   try {
     // 3) Verify the token
-    const decoded = await JWT.verify(token, process.env.JWT_ACCESS_SECRET_KEY);
+    const decoded = await JWT.verify(token, JWT_ACCESS_SECRET_KEY);
 
     // 4) Find the user based on decoded token
     const loggedUser = await prisma.user.findUnique({
@@ -33,9 +35,8 @@ const guard = async (req, res, next) => {
         id: true,
         name: true,
         email: true,
-        role: true,
+        position: true,
         phone: true,
-        supervisorId: true,
       },
     });
 
@@ -63,7 +64,7 @@ const guard = async (req, res, next) => {
 const allowedTo =
   (...roles) =>
   async (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(req.user.position)) {
       return next(
         new ApiError(
           "Access Denied - You are not authorized to perform this action",

@@ -8,38 +8,89 @@ datasource db {
 
 // ------------------ USERS & ROLES ------------------
 model User {
-  id         String    @id @default(uuid())
-  name       String
-  email      String    @unique
-  phone      String
-  position   Position  @default(MEDICAL_REP)
-  password   String
-  department String?
-  location   String?
-  bio        String?
-  lastLogin  DateTime?
+  id                  String    @id @default(uuid())
+  name                String
+  email               String    @unique
+  phone               String
+  Role                Role      @default(MEDICAL_REP)
+  password            String
+  dateOfBirth         DateTime
+  dateOfRecruitment   DateTime  @default(now())
+  department          String?
+  location            String?
+  bio                 String?
+  educationBackground String?
+  iqamaNumber         String
+  passportNumber      String
+  resume              String?
+  certificates        String?
+  lastLogin           DateTime?
+  subRegionId         String?
 
-  // Hierarchy
+  subRegion    SubRegion? @relation(fields: [subRegionId], references: [id])
   supervisorId String? // Reps belong to a supervisor
-  supervisor   User?   @relation("SupervisorToReps", fields: [supervisorId], references: [id])
-  reps         User[]  @relation("SupervisorToReps")
+  supervisor   User?      @relation("SupervisorToReps", fields: [supervisorId], references: [id])
+  reps         User[]     @relation("SupervisorToReps")
+  plans        Plan[]
+  visits       Visit[]
+  requests     Request[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  regions      Region[]
+  visitReports VisitReport[]
 }
 
-enum Position {
+enum Role {
   MANAGER
   SUPERVISOR
   MEDICAL_REP
 }
 
-// ------------------ VISITS ------------------
-model Visit {
-  id String @id @default(uuid())
+model Plan {
+  id                 String     @id @default(uuid())
+  name               String     @unique
+  type               PlanType
+  status             PlanStatus @default(PENDING)
+  startDate          DateTime
+  endDate            DateTime
+  doctors            Doctor[]
+  objectives         String[]
+  supervisorFeedback String?
+
+  createdBy User   @relation(fields: [userId], references: [id])
+  userId    String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum PlanStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+enum PlanType {
+  WEEKLY
+  MONTHLY
+}
+
+model Visit {
+  id        String      @id @default(uuid())
+  samples   String[]
+  date      DateTime
+  time      String
+  doctor    Doctor      @relation(fields: [doctorId], references: [id])
+  doctorId  String
+  createdBy User        @relation(fields: [userId], references: [id])
+  userId    String
+  notes     String?
+  status    VisitStatus @default(SCHEDULED)
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  visitReports VisitReport[]
 }
 
 enum VisitStatus {
@@ -48,110 +99,101 @@ enum VisitStatus {
   CANCELLED
 }
 
-// // ------------------ REGIONS ------------------
-// model Region {
-//   id      String @id @default(uuid())
-//   name    String
-//   country String
+model VisitReport {
+  id              String   @id @default(uuid())
+  visitId         String
+  userId          String
+  duration        String
+  rating          String
+  discussedTopics String
+  doctorFeedback  String?
+  visitPurpose    String
+  notes           String?
+  samplesProvided String[]
 
-//   supervisorId String?     @unique
-//   supervisor   User?       @relation(fields: [supervisorId], references: [id])
-//   subRegions   SubRegion[]
-//   clients      Client[]
+  createdBy User  @relation(fields: [userId], references: [id])
+  visit     Visit @relation(fields: [visitId], references: [id])
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
-// model SubRegion {
-//   id       String  @id @default(uuid())
-//   name     String
-//   regionId String  @unique
-//   repId    String? @unique
+model Request {
+  id           String        @id @default(uuid())
+  userId       String
+  type         RequestType
+  status       RequestStatus @default(PENDING)
+  urgency      String
+  subject      String
+  description  String
+  response     String?
+  responseDate DateTime?
 
-//   region Region @relation(fields: [regionId], references: [id])
-//   rep    User?  @relation(fields: [repId], references: [id])
+  handledAt DateTime?
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+  user User @relation(fields: [userId], references: [id])
 
-// // ------------------ CLIENTS ------------------
-// model Client {
-//   id          String     @id @default(uuid())
-//   name        String
-//   type        ClientType @default(DOCTOR)
-//   phone       String
-//   email       String     @unique
-//   isActive    Boolean    @default(true)
-//   notes       String?
-//   locationUrl String? // Optional Google Maps link
-//   latitude    Float
-//   longitude   Float
-//   regionId    String
-//   region      Region     @relation(fields: [regionId], references: [id])
-//   visits      Visit[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+enum RequestType {
+  EXPENSE
+  MARKETING
+  SAMPLE
+  LEAVE
+}
 
-// enum ClientType {
-//   DOCTOR
-//   PHARMACY
-// }
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
 
-// model Product {
-//   id           String         @id @default(uuid())
-//   name         String
-//   quantity     Int
-//   unitPrice    Float
-//   inStock      Boolean        @default(true)
-//   productVisit ProductVisit[]
+model Region {
+  id      String @id @default(uuid())
+  name    String
+  country String
+  userId  String
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+  supervisor User        @relation(fields: [userId], references: [id])
+  subRegions SubRegion[]
+  doctors    Doctor[]
 
-// model ProductVisit {
-//   id        String @id @default(uuid())
-//   productId String
-//   visitId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
-//   product Product @relation(fields: [productId], references: [id])
-//   visit   Visit   @relation(fields: [visitId], references: [id])
+model SubRegion {
+  id       String @id @default(uuid())
+  name     String
+  regionId String @unique
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+  region Region @relation(fields: [regionId], references: [id])
+  reps   User[]
 
-// // ------------------ REQUESTS ------------------
-// model Request {
-//   id           String        @id @default(uuid())
-//   userId       String
-//   type         RequestType
-//   status       RequestStatus @default(PENDING)
-//   title        String
-//   description  String?
-//   amount       Float?
-//   decisionNote String?
-//   handledAt    DateTime?
-//   createdAt    DateTime      @default(now())
-//   updatedAt    DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
-//   // Relations
-//   user User @relation(fields: [userId], references: [id])
-// }
+model Doctor {
+  id                String   @id @default(uuid())
+  name              String
+  email             String
+  phone             String
+  avgPatientsPerDay Int
+  dateOfBirth       DateTime
+  specialty         String
+  planId            String?  @unique
+  LicenseNumber     String
+  latitude          Float?
+  longitude         Float?
+  isActive          Boolean  @default(true)
 
-// enum RequestType {
-//   EXPENSE // مصاريف
-//   MARKETING // دعم تسويقي
-//   SAMPLE // عينات
-//   LEAVE // إجازة
-// }
+  plan   Plan?    @relation(fields: [planId], references: [id])
+  region Region[]
+  visits Visit[]
 
-// enum RequestStatus {
-//   PENDING
-//   APPROVED
-//   REJECTED
-// }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
