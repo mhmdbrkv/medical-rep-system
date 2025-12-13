@@ -2,11 +2,10 @@ import bcrypt from "bcrypt";
 import ApiError from "../utils/ApiError.js";
 import { prisma } from "../config/db.js";
 
-import { generateAccessToken } from "../utils/jwtToken.js";
-
 // Create user
 const createUser = async (req, res, next) => {
-  const { name, email, password, phone, role, supervisorId } = req.body;
+  const { name, email, password, phone, role, dateOfBirth, supervisorId } =
+    req.body;
 
   // find the user by email
   const user = await prisma.user.findUnique({
@@ -17,7 +16,7 @@ const createUser = async (req, res, next) => {
   }
 
   // validate role
-  const isRoleValid = ["MEDICAL_REP", "SUPERVISOR"].includes(role);
+  const isRoleValid = ["MEDICAL_REP", "SUPERVISOR", "MANAGER"].includes(role);
   if (!isRoleValid) {
     return next(new ApiError("Invalid role", 400));
   }
@@ -34,26 +33,26 @@ const createUser = async (req, res, next) => {
     );
   }
 
+  // hash password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   // create new user
   const newUser = await prisma.user.create({
     data: {
       name,
       email,
-      password: await bcrypt.hash(password, 10),
+      password: hashedPassword,
       phone,
       role,
-      supervisorId,
+      supervisorId: supervisorId || req.user?.id,
+      dateOfBirth: new Date(dateOfBirth),
     },
   });
-
-  // geerate jwt
-  const accessToken = generateAccessToken(newUser.id);
 
   res.status(201).json({
     status: "success",
     message: "User created successfully",
     data: newUser,
-    token: accessToken,
   });
 };
 
@@ -66,15 +65,6 @@ const getAllUsers = async (req, res) => {
       email: true,
       phone: true,
       role: true,
-      supervisorId: true,
-      regions: {
-        select: {
-          id: true,
-          name: true,
-          city: true,
-          country: true,
-        },
-      },
       createdAt: true,
       updatedAt: true,
     },
@@ -90,8 +80,8 @@ const getAllUsers = async (req, res) => {
   });
 };
 
-// Get rep details
-const getUserDetails = async (req, res) => {
+// Get user details
+const getUserDetails = async (req, res, next) => {
   const { id } = req.params;
 
   const user = await prisma.user.findUnique({
@@ -105,14 +95,6 @@ const getUserDetails = async (req, res) => {
       supervisorId: true,
       createdAt: true,
       lastLogin: true,
-      sales: {
-        select: {
-          id: true,
-          totalPrice: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      },
       supervisor: {
         select: {
           id: true,
@@ -125,14 +107,8 @@ const getUserDetails = async (req, res) => {
   });
 
   if (!user) {
-    return res.status(404).json({
-      status: "fail",
-      message: "User not found",
-    });
+    return next(new ApiError("User not found", 404));
   }
-
-  let totalSales = 0;
-  user?.sales?.forEach((sale) => (totalSales += +sale?.amount));
 
   let yearsOfExperience = 0;
   if (user?.createdAt) {
@@ -144,7 +120,6 @@ const getUserDetails = async (req, res) => {
     status: "success",
     message: "User fetched successfully",
     data: {
-      totalSales,
       yearsOfExperience,
       lastLogin: user?.lastLogin,
       joinDate: user?.createdAt,
@@ -155,18 +130,28 @@ const getUserDetails = async (req, res) => {
 };
 
 // Update one user by id
-const updateOneUserById = async (req, res) => {
+const updateOneUserById = async (req, res, next) => {
   const { id } = req.params;
+
+  const exists = await prisma.user.findUnique({
+    where: { id },
+  });
+  if (!exists) {
+    return next(new ApiError("User not found", 404));
+  }
 
   const user = await prisma.user.update({
     where: { id },
     data: req.body,
   });
 
+  let userData = { ...user };
+  delete userData.password;
+
   res.status(200).json({
     status: "success",
     message: "User updated successfully",
-    data: user,
+    data: userData,
   });
 };
 
@@ -183,10 +168,56 @@ const deleteOneUserById = async (req, res) => {
     .json({ status: "success", message: "User deleted successfully" });
 };
 
+const addNewDoctor = async (req, res, next) => {
+  const {
+    name,
+    email,
+    phone,
+    avgPatientsPerDay,
+    dateOfBirth,
+    specialty,
+    LicenseNumber,
+    latitude,
+    longitude,
+  } = req.body;
+
+  // find doctor by email
+  const doctor = await prisma.doctor.findFirst({
+    where: { email },
+  });
+  if (doctor) {
+    return next(
+      new ApiError(`doctor with email: ${email} already exists`, 400)
+    );
+  }
+
+  // Add doctor
+  const newDoctor = await prisma.doctor.create({
+    data: {
+      name,
+      email,
+      phone,
+      avgPatientsPerDay,
+      dateOfBirth: new Date(dateOfBirth),
+      specialty,
+      LicenseNumber,
+      latitude,
+      longitude,
+    },
+  });
+
+  res.status(201).json({
+    status: "success",
+    message: "User created successfully",
+    data: newDoctor,
+  });
+};
+
 export {
   createUser,
   getAllUsers,
   getUserDetails,
   updateOneUserById,
   deleteOneUserById,
+  addNewDoctor,
 };

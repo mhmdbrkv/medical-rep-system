@@ -35,7 +35,7 @@ const guard = async (req, res, next) => {
         id: true,
         name: true,
         email: true,
-        position: true,
+        role: true,
         phone: true,
       },
     });
@@ -64,7 +64,7 @@ const guard = async (req, res, next) => {
 const allowedTo =
   (...roles) =>
   async (req, res, next) => {
-    if (!roles.includes(req.user.position)) {
+    if (!roles.includes(req.user.role)) {
       return next(
         new ApiError(
           "Access Denied - You are not authorized to perform this action",

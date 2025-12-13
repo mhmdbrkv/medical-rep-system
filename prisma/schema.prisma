@@ -12,7 +12,7 @@ model User {
   name                String
   email               String    @unique
   phone               String
-  Role                Role      @default(MEDICAL_REP)
+  role                Role      @default(MEDICAL_REP)
   password            String
   dateOfBirth         DateTime
   dateOfRecruitment   DateTime  @default(now())
@@ -20,8 +20,8 @@ model User {
   location            String?
   bio                 String?
   educationBackground String?
-  iqamaNumber         String
-  passportNumber      String
+  iqamaNumber         String?
+  passportNumber      String?
   resume              String?
   certificates        String?
   lastLogin           DateTime?
@@ -105,7 +105,7 @@ model VisitReport {
   userId          String
   duration        String
   rating          String
-  discussedTopics String
+  discussedTopics String[]
   doctorFeedback  String?
   visitPurpose    String
   notes           String?
@@ -120,6 +120,7 @@ model VisitReport {
 
 model Request {
   id           String        @id @default(uuid())
+  title        String
   userId       String
   type         RequestType
   status       RequestStatus @default(PENDING)
