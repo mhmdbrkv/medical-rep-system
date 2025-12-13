@@ -1,21 +1,20 @@
 import express from "express";
 import morgan from "morgan";
-// import cors from "cors";
+import cors from "cors";
 import compression from "compression";
 import helmet from "helmet";
-
-import ApiError from "./utils/ApiError.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import mountRoutes from "./routes/index.js";
 import { PORT, CLIENT_URL, NODE_ENV } from "./config/index.js";
+import ApiError from "./utils/ApiError.js";
 
 const app = express();
 
 // Configure CORS with specific options
-// const corsOptions = {
-//   origin: CLIENT_URL, // Allow a single origin
-//   credentials: true, // Allow cookies and HTTP authentication
-// };
+const corsOptions = {
+  origin: "*", // Allow all origins
+  credentials: true, // Allow cookies and HTTP authentication
+};
 
 if (NODE_ENV === "development") {
   app.use(morgan("dev"));
@@ -24,7 +23,7 @@ if (NODE_ENV === "development") {
 
 //middlewares
 app.use(helmet());
-// app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 app.use(compression());
 app.use(express.json({ limit: "20kb" }));
 app.use(express.urlencoded({ extended: true }));
