@@ -63,8 +63,10 @@ const getAllPlans = async (req, res) => {
   res.status(200).json({
     status: "success",
     message: "Data fetched successfully",
-    results: data.length,
-    data: data,
+    data: {
+      results: data.length,
+      data,
+    },
   });
 };
 
@@ -121,8 +123,10 @@ const getVisits = async (req, res) => {
   res.status(200).json({
     status: "success",
     message: "Data fetched successfully",
-    results: data.length,
-    data: data,
+    data: {
+      results: data.length,
+      data,
+    },
   });
 };
 
@@ -173,8 +177,10 @@ const getAllVisitReports = async (req, res) => {
   res.status(200).json({
     status: "success",
     message: "Data fetched successfully",
-    results: data.length,
-    data: data,
+    data: {
+      results: data.length,
+      data,
+    },
   });
 };
 
@@ -190,8 +196,10 @@ const getAllRequests = async (req, res, next) => {
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      results: data.length,
-      data: data,
+      data: {
+        results: data.length,
+        data,
+      },
     });
   } catch (error) {
     console.error(error);
