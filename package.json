@@ -4,6 +4,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
+    "postinstall": "npx prisma generate",
     "start": "node --es-module-specifier-resolution=node .",
     "dev": "nodemon --es-module-specifier-resolution=node .",
     "prisma:generate": "npx prisma generate",
