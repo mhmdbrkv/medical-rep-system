@@ -1,4 +1,4 @@
-import ApiError from "../utils/ApiError.js";
+import { ApiError } from "../utils/ApiError.js";
 
 const devError = (err, res) =>
   res.status(err.statusCode).json({
