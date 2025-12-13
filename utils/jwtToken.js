@@ -1,9 +1,9 @@
 import JWT from "jsonwebtoken";
-import ApiError from "./apiError.js";
 import {
   JWT_ACCESS_SECRET_KEY,
   JWT_ACCESS_EXPIRE_TIME,
 } from "../config/index.js";
+import ApiError from "./ApiError.js";
 
 const generateAccessToken = (userId) => {
   try {

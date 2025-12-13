@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
-import ApiError from "../utils/ApiError.js";
 import { prisma } from "../config/db.js";
 import { generateAccessToken } from "../utils/jwtToken.js";
+import ApiError from "../utils/ApiError.js";
 
 // Login
 const login = async (req, res, next) => {

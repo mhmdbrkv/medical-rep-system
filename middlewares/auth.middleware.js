@@ -1,8 +1,7 @@
 import JWT from "jsonwebtoken";
-import ApiError from "../utils/ApiError.js";
 import { prisma } from "../config/db.js";
-
 import { JWT_ACCESS_SECRET_KEY } from "../config/index.js";
+import ApiError from "../utils/ApiError.js";
 
 const guard = async (req, res, next) => {
   // 1) Check if token exists in request
