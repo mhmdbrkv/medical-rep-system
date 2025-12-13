@@ -6,7 +6,7 @@ import helmet from "helmet";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import mountRoutes from "./routes/index.js";
 import { PORT, CLIENT_URL, NODE_ENV } from "./config/index.js";
-import { ApiError } from "./utils/ApiError.js";
+import { ApiError } from "./utils/apiError.js";
 
 const app = express();
 

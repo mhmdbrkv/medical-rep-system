@@ -1,5 +1,5 @@
 import { prisma } from "../config/db.js";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 
 const repMiddleware = async (req, res, next) => {
   const { position, id: userId } = req.user;

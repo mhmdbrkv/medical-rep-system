@@ -4,8 +4,8 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node .",
-    "dev": "nodemon .",
+    "start": "node --es-module-specifier-resolution=node .",
+    "dev": "nodemon --es-module-specifier-resolution=node .",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev"
   },
