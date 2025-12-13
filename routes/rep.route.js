@@ -27,18 +27,18 @@ router.patch("/profile", updateProfile);
 // Plans Routes
 router.post("/plans", createPlan);
 router.get("/plans", getAllPlans);
-router.get("/plans/:id", getOnePlan); // untested
+router.get("/plans/:id", getOnePlan);
 
 // Visits and Visit Reports Routes
 router.post("/visits", scheduleVisit);
 router.get("/visits", getVisits);
-router.post("/visit-reports", addVisitReports); // untested
-router.get("/visit-reports", getAllVisitReports); // untested
+router.post("/visit-reports", addVisitReports);
+router.get("/visit-reports", getAllVisitReports);
 
 // Requests Routes
-router.get("/requests", getAllRequests); // untested
-router.post("/requests", createRequest); // untested
-router.patch("/requests/:id", updateRequest); // untested
+router.get("/requests", getAllRequests);
+router.post("/requests", createRequest);
+router.patch("/requests/:id", updateRequest);
 
 // Coaching Reports Routes
 router.patch("/coaching-reports/:id", addCommentsToCoachingReport); // untested
