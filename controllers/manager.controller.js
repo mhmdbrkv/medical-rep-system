@@ -44,7 +44,7 @@ const createUser = async (req, res, next) => {
       password: hashedPassword,
       phone,
       role,
-      supervisorId: supervisorId || req.user?.id,
+      supervisorId: supervisorId,
       dateOfBirth: new Date(dateOfBirth),
     },
   });
