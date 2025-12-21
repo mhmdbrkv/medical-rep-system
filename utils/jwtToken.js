@@ -5,9 +5,9 @@ import {
 } from "../config/index.js";
 import { ApiError } from "./apiError.js";
 
-const generateAccessToken = (userId) => {
+const generateAccessToken = (userId, role) => {
   try {
-    const accessToken = JWT.sign({ userId }, JWT_ACCESS_SECRET_KEY, {
+    const accessToken = JWT.sign({ userId, role }, JWT_ACCESS_SECRET_KEY, {
       expiresIn: JWT_ACCESS_EXPIRE_TIME,
     });
 

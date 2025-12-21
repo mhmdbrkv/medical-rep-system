@@ -1,20 +1,10 @@
 import express from "express";
 const router = express.Router();
 
-import {
-  createPlan,
-  getAllPlans,
-  getOnePlan,
-  addCommentsToCoachingReport,
-} from "../controllers/rep.controller.js";
+import { addCommentsToCoachingReport } from "../controllers/rep.controller.js";
 import { guard, allowedTo } from "../middlewares/auth.middleware.js";
 
 router.use(guard, allowedTo("MEDICAL_REP"));
-
-// Plans Routes
-router.post("/plans", createPlan);
-router.get("/plans", getAllPlans);
-router.get("/plans/:id", getOnePlan);
 
 // Coaching Reports Routes
 router.patch("/coaching-reports/:id", addCommentsToCoachingReport); // untested

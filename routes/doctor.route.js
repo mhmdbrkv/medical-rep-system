@@ -12,10 +12,10 @@ import { guard, allowedTo } from "../middlewares/auth.middleware.js";
 
 router.use(guard);
 
-router.get("/doctors", getAllDoctors);
-router.post("/doctors", allowedTo("MANAGER"), addNewDoctor);
-router.get("/doctors/:id", getOneDoctor);
-router.patch("/doctors/:id", allowedTo("MANAGER"), updateDoctor);
-router.delete("/doctors/:id", allowedTo("MANAGER"), deleteDoctor);
+router.get("/", getAllDoctors);
+router.post("/", allowedTo("MANAGER"), addNewDoctor);
+router.get("//:id", getOneDoctor);
+router.patch("//:id", allowedTo("MANAGER"), updateDoctor);
+router.delete("//:id", allowedTo("MANAGER"), deleteDoctor);
 
 export default router;

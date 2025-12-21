@@ -30,7 +30,6 @@ model User {
   supervisorId String? // Reps belong to a supervisor
   supervisor   User?      @relation("SupervisorToReps", fields: [supervisorId], references: [id])
   reps         User[]     @relation("SupervisorToReps")
-  plans        Plan[]
   visits       Visit[]
   requests     Request[]
 
@@ -38,6 +37,8 @@ model User {
   updatedAt    DateTime      @updatedAt
   regions      Region[]
   visitReports VisitReport[]
+  plans        Plan[]        @relation("planCreatedBy")
+  repPlans     Plan[]        @relation("planToRep")
 }
 
 enum Role {
@@ -48,17 +49,22 @@ enum Role {
 
 model Plan {
   id                 String     @id @default(uuid())
-  name               String     @unique
+  title              String     @unique
   type               PlanType
   status             PlanStatus @default(PENDING)
+  description        String
   startDate          DateTime
   endDate            DateTime
   doctors            Doctor[]
+  targetDoctors      Int
+  targetVisits       Int
   objectives         String[]
   supervisorFeedback String?
 
-  createdBy User   @relation(fields: [userId], references: [id])
-  userId    String
+  createdBy   User   @relation("planCreatedBy", fields: [createdById], references: [id])
+  rep         User   @relation("planToRep", fields: [repId], references: [id])
+  createdById String
+  repId       String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

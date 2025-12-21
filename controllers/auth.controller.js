@@ -16,7 +16,7 @@ const login = async (req, res, next) => {
   }
 
   // generate JWT
-  const accessToken = generateAccessToken(user.id);
+  const accessToken = generateAccessToken(user.id, user.role);
 
   // update lastLogin
   await prisma.user.update({
@@ -60,7 +60,7 @@ const signup = async (req, res, next) => {
   });
 
   // generate JWT
-  const accessToken = generateAccessToken(newUser.id);
+  const accessToken = generateAccessToken(newUser.id, newUser.role);
 
   res.status(201).json({
     status: "success",
