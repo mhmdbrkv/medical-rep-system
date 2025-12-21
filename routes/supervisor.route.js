@@ -15,4 +15,6 @@ router.get("/team", getSupervisorTeam);
 router.get("/team/requests", getTeamRequests);
 router.get("/team/:repId", getRepDetails);
 
+// plan mgmt routes
+
 export default router;
