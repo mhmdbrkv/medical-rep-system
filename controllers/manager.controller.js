@@ -4,16 +4,8 @@ import { ApiError } from "../utils/apiError.js";
 
 // Create user
 const createUser = async (req, res, next) => {
-  const {
-    name,
-    email,
-    password,
-    phone,
-    role,
-    dateOfBirth,
-    supervisorId,
-    managerId,
-  } = req.body;
+  const { name, email, password, phone, role, dateOfBirth, supervisorId } =
+    req.body;
 
   // find the user by email
   const user = await prisma.user.findUnique({
