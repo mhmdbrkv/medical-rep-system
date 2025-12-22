@@ -4,8 +4,16 @@ import { ApiError } from "../utils/apiError.js";
 
 // Create user
 const createUser = async (req, res, next) => {
-  const { name, email, password, phone, role, dateOfBirth, supervisorId } =
-    req.body;
+  const {
+    name,
+    email,
+    password,
+    phone,
+    role,
+    dateOfBirth,
+    supervisorId,
+    managerId,
+  } = req.body;
 
   // find the user by email
   const user = await prisma.user.findUnique({
@@ -27,9 +35,12 @@ const createUser = async (req, res, next) => {
   }
 
   // validate that supervisorId is not provided for supervisors
-  if (role === "SUPERVISOR" && supervisorId) {
+  if (["MANAGER", "SUPERVISOR"].includes(role) && supervisorId) {
     return next(
-      new ApiError("Supervisor ID is not allowed for supervisors", 400)
+      new ApiError(
+        "Supervisor ID is not allowed for supervisors and managers",
+        400
+      )
     );
   }
 
@@ -44,7 +55,8 @@ const createUser = async (req, res, next) => {
       password: hashedPassword,
       phone,
       role,
-      supervisorId: supervisorId,
+      supervisorId,
+      managerId: req.user.id,
       dateOfBirth: new Date(dateOfBirth),
     },
   });
@@ -96,6 +108,14 @@ const getUserDetails = async (req, res, next) => {
       createdAt: true,
       lastLogin: true,
       supervisor: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+        },
+      },
+      manager: {
         select: {
           id: true,
           name: true,
@@ -168,10 +188,85 @@ const deleteOneUserById = async (req, res) => {
     .json({ status: "success", message: "User deleted successfully" });
 };
 
+const getManagerTeam = async (req, res, next) => {
+  try {
+    let filter = {};
+    if (
+      req.query?.role &&
+      ["MEDICAL_REP", "SUPERVISOR"].includes(req.query?.role)
+    ) {
+      filter = { role: req.query?.role };
+    }
+    const team = await prisma.user.findMany({
+      where: { managerId: req.user.id, ...filter },
+    });
+
+    let supervisorsCount = 0;
+    let repsCount = 0;
+    team.forEach((user) => {
+      if (user.role === "SUPERVISOR") {
+        supervisorsCount += 1;
+      } else if (user.role === "MEDICAL_REP") {
+        repsCount += 1;
+      }
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Data fetched successfully",
+      data: {
+        totalMembers: team.length,
+        supervisorsCount,
+        repsCount,
+        data: team,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return next(new ApiError(`Get Manager Team Error: ${err}`));
+  }
+};
+
+const getTeamRequests = async (req, res, next) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { managerId: req.user.id },
+      select: { id: true, requests: true },
+    });
+
+    if (users.length === 0) {
+      res.status(200).json({
+        status: "success",
+        message: "No requests found",
+      });
+    }
+
+    const data = await prisma.request.findMany({
+      where: { userId: { in: users.map((rep) => rep.id) } },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
+    });
+    res.status(200).json({
+      status: "success",
+      message: "Data fetched successfully",
+      data: {
+        results: data.length,
+        data,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    next(new ApiError("Failed to fetch requests", 500));
+  }
+};
+
 export {
   createUser,
   getAllUsers,
   getUserDetails,
   updateOneUserById,
   deleteOneUserById,
+  getManagerTeam,
+  getTeamRequests,
 };

@@ -28,7 +28,9 @@ model User {
 
   subRegion    SubRegion? @relation(fields: [subRegionId], references: [id])
   supervisorId String? // Reps belong to a supervisor
+  managerId    String
   supervisor   User?      @relation("SupervisorToReps", fields: [supervisorId], references: [id])
+  manager      User       @relation("manager", fields: [managerId], references: [id])
   reps         User[]     @relation("SupervisorToReps")
   visits       Visit[]
   requests     Request[]
@@ -39,6 +41,7 @@ model User {
   visitReports VisitReport[]
   plans        Plan[]        @relation("planCreatedBy")
   repPlans     Plan[]        @relation("planToRep")
+  users        User[]        @relation("manager")
 }
 
 enum Role {

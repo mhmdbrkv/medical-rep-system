@@ -94,18 +94,33 @@ const getPlansMGMT = async (req, res, next) => {
     });
 
     const plans = await prisma.plan.findMany({
-      where: { repId: { in: teamIds.map((team) => team.id) } },
-
+      where: {
+        OR: [
+          { createdBy: { id: req.user.id } },
+          { in: teamIds.map((team) => team.id) },
+        ],
+        status: "PENDING",
+      },
       include: {
         doctors: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
         rep: { select: { id: true, name: true } },
       },
     });
+
+    let myPlans = plans.filter((plan) => plan.createdById === req.user.id);
+    let repPlans = plans.filter((plan) => teamIds.includes(plan.repId));
+    let teamMembers = repPlans.map((plan) => [...new Set(plan.rep.name)]);
+
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      data: plans,
+      data: {
+        teamMembers: teamMembers.length,
+        pendingPlans: repPlans.length,
+        repPlans,
+        myPlans,
+      },
     });
   } catch (error) {
     console.error(error);
