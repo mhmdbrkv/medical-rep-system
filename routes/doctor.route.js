@@ -14,8 +14,8 @@ router.use(guard);
 
 router.get("/", getAllDoctors);
 router.post("/", allowedTo("MANAGER"), addNewDoctor);
-router.get("//:id", getOneDoctor);
-router.patch("//:id", allowedTo("MANAGER"), updateDoctor);
-router.delete("//:id", allowedTo("MANAGER"), deleteDoctor);
+router.get("/:id", getOneDoctor);
+router.patch("/:id", allowedTo("MANAGER"), updateDoctor);
+router.delete("/:id", allowedTo("MANAGER"), deleteDoctor);
 
 export default router;
