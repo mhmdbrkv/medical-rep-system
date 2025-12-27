@@ -35,13 +35,15 @@ model User {
   visits       Visit[]
   requests     Request[]
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
   regions      Region[]
   visitReports VisitReport[]
-  plans        Plan[]        @relation("planCreatedBy")
-  repPlans     Plan[]        @relation("planToRep")
-  users        User[]        @relation("manager")
+  plans        Plan[]           @relation("planCreatedBy")
+  repPlans     Plan[]           @relation("planToRep")
+  users        User[]           @relation("manager")
+  coachings    CoachingReport[] @relation("CoachingCreatedBy")
+  repCoachings CoachingReport[] @relation("repCoaching")
 }
 
 enum Role {
@@ -199,10 +201,46 @@ model Doctor {
   longitude         Float?
   isActive          Boolean  @default(true)
 
-  plan   Plan?    @relation(fields: [planId], references: [id])
-  region Region[]
-  visits Visit[]
+  hospital  Hospital[]
+  plan      Plan?            @relation(fields: [planId], references: [id])
+  region    Region[]
+  visits    Visit[]
+  coachings CoachingReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Hospital {
+  id       String @id @default(uuid())
+  name     String
+  location String
+
+  doctors Doctor[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CoachingReport {
+  id                String   @id @default(uuid())
+  rep               User     @relation("repCoaching", fields: [repId], references: [id])
+  doctor            Doctor   @relation(fields: [doctorId], references: [id])
+  createdBy         User     @relation("CoachingCreatedBy", fields: [createdById], references: [id])
+  visitDate         DateTime
+  visitDuration     String
+  visitLocation     String
+  performanceRating Int
+  visitPros         String[]
+  visitCons         String[]
+  recommendations   String
+  actionItems       String[]
+  notes             String?
+  repComment        String?
+  repAccepted       Boolean? @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  repId             String
+  doctorId          String
+  createdById       String
 }

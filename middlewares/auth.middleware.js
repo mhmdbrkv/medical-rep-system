@@ -36,6 +36,11 @@ const guard = async (req, res, next) => {
         email: true,
         role: true,
         phone: true,
+        supervisorId: true,
+        managerId: true,
+        dateOfBirth: true,
+        dateOfRecruitment: true,
+        lastLogin: true,
       },
     });
 
