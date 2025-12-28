@@ -9,6 +9,8 @@ import visitRoutes from "./visit.route.js";
 import requestRoutes from "./request.route.js";
 import planRoutes from "./plan.route.js";
 import coachingReportRoutes from "./coaching-reports.route.js";
+import regionRoutes from "./region.route.js";
+import subRegionRoutes from "./subRegion.route.js";
 
 export default (app) => {
   app.use("/api/auth", authRoutes);
@@ -22,4 +24,6 @@ export default (app) => {
   app.use("/api/requests", requestRoutes);
   app.use("/api/plans", planRoutes);
   app.use("/api/coaching-reports", coachingReportRoutes);
+  app.use("/api/regions", regionRoutes);
+  app.use("/api/sub-regions", subRegionRoutes);
 };

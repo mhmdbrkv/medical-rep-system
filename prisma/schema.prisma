@@ -162,14 +162,13 @@ enum RequestStatus {
 }
 
 model Region {
-  id      String @id @default(uuid())
-  name    String
-  country String
-  userId  String
+  id           String @id @default(uuid())
+  name         String
+  country      String
+  supervisorId String
 
-  supervisor User        @relation(fields: [userId], references: [id])
+  supervisor User        @relation(fields: [supervisorId], references: [id])
   subRegions SubRegion[]
-  doctors    Doctor[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -178,11 +177,11 @@ model Region {
 model SubRegion {
   id       String @id @default(uuid())
   name     String
-  regionId String @unique
+  regionId String
 
-  region Region @relation(fields: [regionId], references: [id])
-  reps   User[]
-
+  region    Region   @relation(fields: [regionId], references: [id])
+  reps      User[]
+  doctors   Doctor[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -203,7 +202,7 @@ model Doctor {
 
   hospitals Hospital[]
   plan      Plan?            @relation(fields: [planId], references: [id])
-  region    Region[]
+  subRegion SubRegion[]
   visits    Visit[]
   coachings CoachingReport[]
 
