@@ -18,11 +18,20 @@ const addHospital = async (req, res, next) => {
 const getAllHospitals = async (req, res, next) => {
   try {
     const hospitals = await prisma.hospital.findMany({
-      include: { doctors: true },
+      include: {
+        doctors: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+      },
     });
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
+      results: hospitals.length,
       data: hospitals,
     });
   } catch (error) {

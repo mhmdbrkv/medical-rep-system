@@ -12,7 +12,7 @@ import { guard, allowedTo } from "../middlewares/auth.middleware.js";
 
 router.use(guard);
 
-router.post("/", allowedTo("SUPERVISOR"), addCoachingReport);
+router.post("/", allowedTo("SUPERVISOR", "MANAGER"), addCoachingReport);
 router.get("/", allowedTo("SUPERVISOR"), getMyCoachingReport);
 router.get("/all", allowedTo("MANAGER"), getAllCoachingReport);
 router.get("/rep", allowedTo("MEDICAL_REP"), getRepCoachingReport);

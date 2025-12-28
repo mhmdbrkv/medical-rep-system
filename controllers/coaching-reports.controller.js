@@ -58,7 +58,8 @@ const responseToCoachingReport = async (req, res, next) => {
 
     if (
       exists.repId !== req.user.id ||
-      exists.createdById !== req.user.supervisorId
+      (exists.createdById !== req.user.supervisorId &&
+        exists.createdById !== req.user.managerId)
     ) {
       return next(
         new ApiError("Forbidden, you can only access your own data", 403)
@@ -68,9 +69,14 @@ const responseToCoachingReport = async (req, res, next) => {
     let data = {};
     if (comment) {
       data = await prisma.coachingReport.update({
-        where: { id, repId: req.user.id, createdById: req.user.supervisorId },
+        where: {
+          id,
+          repId: req.user.id,
+          createdById: { in: [req.user.supervisorId, req.user.managerId] },
+        },
         data: {
           repComment: comment,
+          repAccepted: true,
         },
       });
     } else if (accept) {
@@ -99,10 +105,50 @@ const getMyCoachingReport = async (req, res, next) => {
       where: {
         createdById: req.user.id,
       },
+      select: {
+        id: true,
+        visitDate: true,
+        visitDuration: true,
+        visitLocation: true,
+        performanceRating: true,
+        visitPros: true,
+        visitCons: true,
+        recommendations: true,
+        actionItems: true,
+        notes: true,
+        repComment: true,
+        repAccepted: true,
+        createdAt: true,
+        rep: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
     });
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
+      results: data.length,
       data: data,
     });
   } catch (error) {
@@ -113,10 +159,51 @@ const getMyCoachingReport = async (req, res, next) => {
 
 const getAllCoachingReport = async (req, res, next) => {
   try {
-    const data = await prisma.coachingReport.findMany({});
+    const data = await prisma.coachingReport.findMany({
+      select: {
+        id: true,
+        visitDate: true,
+        visitDuration: true,
+        visitLocation: true,
+        performanceRating: true,
+        visitPros: true,
+        visitCons: true,
+        recommendations: true,
+        actionItems: true,
+        notes: true,
+        repComment: true,
+        repAccepted: true,
+        createdAt: true,
+        rep: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+    });
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
+      results: data.length,
       data: data,
     });
   } catch (error) {
@@ -131,10 +218,50 @@ const getRepCoachingReport = async (req, res, next) => {
       where: {
         repId: req.user.id,
       },
+      select: {
+        id: true,
+        visitDate: true,
+        visitDuration: true,
+        visitLocation: true,
+        performanceRating: true,
+        visitPros: true,
+        visitCons: true,
+        recommendations: true,
+        actionItems: true,
+        notes: true,
+        repComment: true,
+        repAccepted: true,
+        createdAt: true,
+        rep: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
     });
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
+      results: data.length,
       data: data,
     });
   } catch (error) {
