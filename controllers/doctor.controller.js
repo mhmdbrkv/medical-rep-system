@@ -7,7 +7,7 @@ const addNewDoctor = async (req, res, next) => {
     name,
     email,
     phone,
-    hospital,
+    hospitalIds,
     avgPatientsPerDay,
     dateOfBirth,
     specialty,
@@ -32,7 +32,9 @@ const addNewDoctor = async (req, res, next) => {
       name,
       email,
       phone,
-      hospital,
+      hospitals: {
+        connect: hospitalIds.map((id) => ({ id })),
+      },
       avgPatientsPerDay,
       dateOfBirth: new Date(dateOfBirth),
       specialty,
@@ -51,7 +53,9 @@ const addNewDoctor = async (req, res, next) => {
 
 // Get all doctors
 const getAllDoctors = async (req, res) => {
-  const doctors = await prisma.doctor.findMany({ include: { hospital: true } });
+  const doctors = await prisma.doctor.findMany({
+    include: { hospitals: true },
+  });
   res.status(200).json({
     status: "success",
     message: "Doctors fetched successfully",
@@ -68,7 +72,7 @@ const getOneDoctor = async (req, res, next) => {
 
   const doctor = await prisma.doctor.findUnique({
     where: { id },
-    include: { hospital: true },
+    include: { hospitals: true },
   });
 
   if (!doctor) {
@@ -88,7 +92,7 @@ const updateDoctor = async (req, res, next) => {
 
   const exists = await prisma.doctor.findUnique({
     where: { id },
-    include: { hospital: true },
+    include: { hospitals: true },
   });
   if (!exists) {
     return next(new ApiError("Doctor not found", 404));

@@ -201,7 +201,7 @@ model Doctor {
   longitude         Float?
   isActive          Boolean  @default(true)
 
-  hospital  Hospital[]
+  hospitals Hospital[]
   plan      Plan?            @relation(fields: [planId], references: [id])
   region    Region[]
   visits    Visit[]
