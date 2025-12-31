@@ -24,6 +24,7 @@ model User {
   resume              String?
   certificates        String?
   lastLogin           DateTime?
+  isActive            Boolean?  @default(true)
   subRegionId         String?
 
   subRegion    SubRegion? @relation(fields: [subRegionId], references: [id])

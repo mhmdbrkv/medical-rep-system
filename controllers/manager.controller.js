@@ -99,6 +99,14 @@ const getUserDetails = async (req, res, next) => {
       supervisorId: true,
       createdAt: true,
       lastLogin: true,
+      isActive: true,
+      regions: {
+        select: {
+          id: true,
+          name: true,
+          country: true,
+        },
+      },
       supervisor: {
         select: {
           id: true,
@@ -191,6 +199,10 @@ const getManagerTeam = async (req, res, next) => {
     }
     const team = await prisma.user.findMany({
       where: { managerId: req.user.id, ...filter },
+      include: {
+        supervisor: { select: { id: true, name: true } },
+        reps: { select: { id: true, name: true } },
+      },
     });
 
     let supervisorsCount = 0;
