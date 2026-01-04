@@ -160,6 +160,20 @@ const updateOneUserById = async (req, res, next) => {
     return next(new ApiError("User not found", 404));
   }
 
+  if (req.body?.newPassword) {
+    if (await bcrypt.compare(req?.body?.newPassword, exists?.password)) {
+      return next(
+        new ApiError(
+          "New password cannot be the same as the current password",
+          400
+        )
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(req.body?.newPassword, 10);
+    req.body.password = hashedPassword;
+  }
+
   const user = await prisma.user.update({
     where: { id },
     data: req.body,
@@ -189,8 +203,8 @@ const deleteOneUserById = async (req, res) => {
 };
 
 const getManagerTeam = async (req, res, next) => {
+  let filter = { isActive: true };
   try {
-    let filter = {};
     if (
       req.query?.role &&
       ["MEDICAL_REP", "SUPERVISOR"].includes(req.query?.role)
@@ -199,9 +213,13 @@ const getManagerTeam = async (req, res, next) => {
     }
     const team = await prisma.user.findMany({
       where: { managerId: req.user.id, ...filter },
-      include: {
-        supervisor: { select: { id: true, name: true } },
-        reps: { select: { id: true, name: true } },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        createdAt: true,
       },
     });
 

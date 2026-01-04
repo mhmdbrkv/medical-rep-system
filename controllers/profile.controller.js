@@ -16,6 +16,10 @@ const getProfile = async (req, res) => {
 };
 
 const updateProfile = async (req, res) => {
+  if (req.body?.password) {
+    delete req.body.password; // Prevent password updates through this route
+  }
+
   const data = await prisma.user.update({
     where: { id: req.user.id },
     data: req.body,
