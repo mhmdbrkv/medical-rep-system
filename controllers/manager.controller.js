@@ -220,6 +220,18 @@ const getManagerTeam = async (req, res, next) => {
         phone: true,
         role: true,
         createdAt: true,
+        reps: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            role: true,
+            supervisorId: true,
+
+            createdAt: true,
+          },
+        },
       },
     });
 
