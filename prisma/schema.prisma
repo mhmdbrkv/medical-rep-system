@@ -47,6 +47,7 @@ model User {
   repCoachings        CoachingReport[] @relation("repCoaching")
   appraisalsByManager Appraisal[]      @relation("appraisalManager")
   appraisalsForRep    Appraisal[]      @relation("appraisalRep")
+  forecasts           forecast[]
 }
 
 enum Role {
@@ -262,6 +263,21 @@ model Appraisal {
 
   repId     String
   managerId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model forecast {
+  id                 String   @id @default(uuid())
+  rep                User     @relation(fields: [repId], references: [id])
+  repId              String
+  periodType         String
+  periodDate         DateTime
+  productForecasts   Json[]
+  notes              String?
+  isApproved         Boolean  @default(false)
+  supervisorFeedback String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
