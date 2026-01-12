@@ -11,6 +11,7 @@ import planRoutes from "./plan.route.js";
 import coachingReportRoutes from "./coaching-reports.route.js";
 import regionRoutes from "./region.route.js";
 import subRegionRoutes from "./subRegion.route.js";
+import appraisalRoutes from "./appraisal.route.js";
 
 export default (app) => {
   app.use("/api/auth", authRoutes);
@@ -26,4 +27,5 @@ export default (app) => {
   app.use("/api/coaching-reports", coachingReportRoutes);
   app.use("/api/regions", regionRoutes);
   app.use("/api/sub-regions", subRegionRoutes);
+  app.use("/api/appraisals", appraisalRoutes);
 };

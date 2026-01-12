@@ -36,15 +36,17 @@ model User {
   visits       Visit[]
   requests     Request[]
 
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  regions      Region[]
-  visitReports VisitReport[]
-  plans        Plan[]           @relation("planCreatedBy")
-  repPlans     Plan[]           @relation("planToRep")
-  users        User[]           @relation("manager")
-  coachings    CoachingReport[] @relation("CoachingCreatedBy")
-  repCoachings CoachingReport[] @relation("repCoaching")
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  regions             Region[]
+  visitReports        VisitReport[]
+  plans               Plan[]           @relation("planCreatedBy")
+  repPlans            Plan[]           @relation("planToRep")
+  users               User[]           @relation("manager")
+  coachings           CoachingReport[] @relation("CoachingCreatedBy")
+  repCoachings        CoachingReport[] @relation("repCoaching")
+  appraisalsByManager Appraisal[]      @relation("appraisalManager")
+  appraisalsForRep    Appraisal[]      @relation("appraisalRep")
 }
 
 enum Role {
@@ -243,4 +245,24 @@ model CoachingReport {
   repId             String
   doctorId          String
   createdById       String
+}
+
+model Appraisal {
+  id      String @id @default(uuid())
+  rep     User   @relation("appraisalRep", fields: [repId], references: [id])
+  manager User   @relation("appraisalManager", fields: [managerId], references: [id])
+
+  period                   DateTime
+  salesPerformance         Float
+  customerRelationships    Float
+  productKnowledge         Float
+  complianceAndRegulations Float
+  teamworkAndCollaboration Float
+  feedbackComments         String?
+
+  repId     String
+  managerId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
