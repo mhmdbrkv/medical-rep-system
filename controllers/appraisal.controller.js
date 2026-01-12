@@ -18,7 +18,7 @@ const addAppraisal = async (req, res, next) => {
       data: {
         repId,
         managerId: req.user.id,
-        period,
+        period: new Date(period),
         salesPerformance,
         customerRelationships,
         productKnowledge,
