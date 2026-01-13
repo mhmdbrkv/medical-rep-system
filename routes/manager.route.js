@@ -10,12 +10,13 @@ import {
   getManagerTeam,
   getTeamRequests,
 } from "../controllers/manager.controller.js";
+import { filesUpload } from "../utils/multer.js";
 import { guard, allowedTo } from "../middlewares/auth.middleware.js";
 
 router.use(guard, allowedTo("MANAGER"));
 
 // Users CRUD operations
-router.post("/users", createUser);
+router.post("/users", filesUpload, createUser);
 router.get("/users", getAllUsers);
 router.get("/users/:id", getUserDetails);
 router.put("/users/:id", updateOneUserById);

@@ -65,6 +65,11 @@ const addVisitReports = async (req, res) => {
     },
   });
 
+  await prisma.visit.update({
+    where: { id: visitId },
+    data: { status: "COMPLETED" },
+  });
+
   res.status(200).json({
     status: "success",
     message: "Data created successfully",

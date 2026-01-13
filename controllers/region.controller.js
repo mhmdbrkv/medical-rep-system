@@ -2,10 +2,10 @@ import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 
 const addRegion = async (req, res) => {
-  const { name, country, supervisorId } = req.body;
+  const { name, country } = req.body;
 
   const region = await prisma.region.create({
-    data: { name, country, supervisorId },
+    data: { name, country },
   });
   res.status(201).json({
     status: "success",

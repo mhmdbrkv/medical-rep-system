@@ -48,7 +48,7 @@ const getAppraisals = async (req, res, next) => {
     });
     res.status(200).json({
       success: true,
-      data: appraisals,
+      data: { results: appraisals.length, appraisals },
     });
   } catch (error) {
     console.error(error);

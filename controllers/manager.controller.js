@@ -1,11 +1,67 @@
 import bcrypt from "bcrypt";
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
+import { validateAndDetectFiles } from "../utils/fileValidator.js";
+import { uploadDocumentToCloudinary } from "../utils/cloudinary.js";
 
 // Create user
 const createUser = async (req, res, next) => {
-  const { name, email, password, phone, role, dateOfBirth, supervisorId } =
-    req.body;
+  const {
+    name,
+    email,
+    password,
+    phone,
+    dateOfBirth,
+    dateOfRecruitment,
+    educationBackground,
+    role,
+    regionIds,
+    supervisorId,
+    iqamaNumber,
+    passportNumber,
+  } = req.body;
+
+  const resumeFiles = await validateAndDetectFiles(req.files?.resume);
+  const certificatesFiles = await validateAndDetectFiles(
+    req.files?.certificates
+  );
+
+  let resume = {};
+  let certificates = [];
+
+  try {
+    if (resumeFiles.length > 0) {
+      const resumeFile = resumeFiles[0];
+
+      // upload resume
+      const result = await uploadDocumentToCloudinary(resumeFile.buffer, {
+        public_id: `file_${resumeFile.originalname}_${Date.now()}`,
+        folder: `folder-files/resumes`,
+      });
+
+      resume = {
+        public_id: result.public_id,
+        url: result.secure_url,
+      };
+    }
+
+    if (certificatesFiles.length > 0) {
+      // upload certificates
+      for (const file of certificatesFiles) {
+        const result2 = await uploadDocumentToCloudinary(file.buffer, {
+          public_id: `file_${file.originalname}_${Date.now()}`,
+          folder: `folder-files/certificates`,
+        });
+
+        certificates.push({
+          public_id: result2.public_id,
+          url: result2.secure_url,
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error uploading files to Cloudinary:", error);
+  }
 
   // find the user by email
   const user = await prisma.user.findUnique({
@@ -47,9 +103,26 @@ const createUser = async (req, res, next) => {
       password: hashedPassword,
       phone,
       role,
-      supervisorId,
-      managerId: req.user.id,
-      dateOfBirth: new Date(dateOfBirth),
+
+      managerId: req.user?.id,
+      supervisorId: supervisorId || null,
+
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+      dateOfRecruitment: dateOfRecruitment ? new Date(dateOfRecruitment) : null,
+
+      educationBackground,
+      iqamaNumber,
+      passportNumber,
+
+      regions: regionIds?.length
+        ? {
+            connect: regionIds.map((id) => ({ id })),
+          }
+        : undefined,
+
+      resume,
+
+      certificates: certificates?.length ? { set: certificates } : null,
     },
   });
 
