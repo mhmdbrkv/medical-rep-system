@@ -8,7 +8,7 @@ import {
 } from "../controllers/supervisor.controller.js";
 import { guard, allowedTo } from "../middlewares/auth.middleware.js";
 
-router.use(guard, allowedTo("SUPERVISOR"));
+router.use(guard, allowedTo("SUPERVISOR", "MANAGER"));
 
 // Team Routes
 router.get("/team", getSupervisorTeam);
