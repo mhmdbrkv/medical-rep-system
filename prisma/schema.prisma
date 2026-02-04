@@ -25,7 +25,6 @@ model User {
   certificates        Json[]
   lastLogin           DateTime?
   isActive            Boolean?  @default(true)
-  subRegionId         String?
   profileImage        Json?
 
   leaveStartDate      DateTime?
@@ -33,12 +32,12 @@ model User {
   leaveDaysCount      Int?      @default(0)
   leaveDaysTakenCount Int?      @default(0)
 
-  subRegion    SubRegion? @relation(fields: [subRegionId], references: [id])
+  subRegions   SubRegion[]
   supervisorId String? // Reps belong to a supervisor
   managerId    String?
-  supervisor   User?      @relation("SupervisorToReps", fields: [supervisorId], references: [id])
-  manager      User?      @relation("manager", fields: [managerId], references: [id])
-  reps         User[]     @relation("SupervisorToReps")
+  supervisor   User?       @relation("SupervisorToReps", fields: [supervisorId], references: [id])
+  manager      User?       @relation("manager", fields: [managerId], references: [id])
+  reps         User[]      @relation("SupervisorToReps")
   visits       Visit[]
   requests     Request[]
 

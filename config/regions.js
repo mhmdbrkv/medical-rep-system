@@ -9,5 +9,5 @@ const Regions = {
   ],
   southernArea: ["Gizan", "Abha"],
   centralArea: [{ Riyadh: ["Riyadh1", "Riyadh2"] }, "AlQassim"],
-  easternArea: ["Eastern 1", "Eastern 2"],
+  easternArea: ["Eastern1", "Eastern2"],
 };

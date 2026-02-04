@@ -16,14 +16,44 @@ const createUser = async (req, res, next) => {
     educationBackground,
     role,
     regionIds,
+    subRegionIds,
     supervisorId,
     iqamaNumber,
     passportNumber,
   } = req.body;
 
+  // find the user by email
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+  if (user) {
+    return next(new ApiError(`User with email: ${email} already exists`, 400));
+  }
+
+  // validate role
+  const isRoleValid = ["MEDICAL_REP", "SUPERVISOR", "MANAGER"].includes(role);
+  if (!isRoleValid) {
+    return next(new ApiError("Invalid role", 400));
+  }
+
+  // validate supervisorId
+  if (role === "MEDICAL_REP" && !supervisorId) {
+    return next(new ApiError("Supervisor ID is required", 400));
+  }
+
+  // validate that supervisorId is not provided for supervisors
+  if (["MANAGER", "SUPERVISOR"].includes(role) && supervisorId) {
+    return next(
+      new ApiError(
+        "Supervisor ID is not allowed for supervisors and managers",
+        400,
+      ),
+    );
+  }
+
   const resumeFiles = await validateAndDetectFiles(req.files?.resume);
   const certificatesFiles = await validateAndDetectFiles(
-    req.files?.certificates
+    req.files?.certificates,
   );
 
   let resume = {};
@@ -63,35 +93,6 @@ const createUser = async (req, res, next) => {
     console.error("Error uploading files to Cloudinary:", error);
   }
 
-  // find the user by email
-  const user = await prisma.user.findUnique({
-    where: { email },
-  });
-  if (user) {
-    return next(new ApiError(`User with email: ${email} already exists`, 400));
-  }
-
-  // validate role
-  const isRoleValid = ["MEDICAL_REP", "SUPERVISOR", "MANAGER"].includes(role);
-  if (!isRoleValid) {
-    return next(new ApiError("Invalid role", 400));
-  }
-
-  // validate supervisorId
-  if (role === "MEDICAL_REP" && !supervisorId) {
-    return next(new ApiError("Supervisor ID is required", 400));
-  }
-
-  // validate that supervisorId is not provided for supervisors
-  if (["MANAGER", "SUPERVISOR"].includes(role) && supervisorId) {
-    return next(
-      new ApiError(
-        "Supervisor ID is not allowed for supervisors and managers",
-        400
-      )
-    );
-  }
-
   // hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -117,6 +118,12 @@ const createUser = async (req, res, next) => {
       regions: regionIds?.length
         ? {
             connect: regionIds.map((id) => ({ id })),
+          }
+        : undefined,
+
+      subRegions: subRegionIds?.length
+        ? {
+            connect: subRegionIds.map((id) => ({ id })),
           }
         : undefined,
 
@@ -238,8 +245,8 @@ const updateOneUserById = async (req, res, next) => {
       return next(
         new ApiError(
           "New password cannot be the same as the current password",
-          400
-        )
+          400,
+        ),
       );
     }
 
