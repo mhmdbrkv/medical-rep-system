@@ -37,9 +37,9 @@ const createUser = async (req, res, next) => {
   }
 
   // validate supervisorId
-  if (role === "MEDICAL_REP" && !supervisorId) {
-    return next(new ApiError("Supervisor ID is required", 400));
-  }
+  // if (role === "MEDICAL_REP" && !supervisorId) {
+  //   return next(new ApiError("Supervisor ID is required", 400));
+  // }
 
   // validate that supervisorId is not provided for supervisors
   if (["MANAGER", "SUPERVISOR"].includes(role) && supervisorId) {
