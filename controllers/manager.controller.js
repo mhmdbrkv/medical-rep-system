@@ -54,7 +54,7 @@ const createUser = async (req, res, next) => {
   let resumeFiles = [];
   let certificatesFiles = [];
 
-  if (req.files) {
+  if (req.files.length > 0) {
     resumeFiles = await validateAndDetectFiles(req.files?.resume);
     certificatesFiles = await validateAndDetectFiles(req.files?.certificates);
   }
