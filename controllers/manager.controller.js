@@ -6,7 +6,7 @@ import { uploadDocumentToCloudinary } from "../utils/cloudinary.js";
 
 // Create user
 const createUser = async (req, res, next) => {
-  const {
+  let {
     name,
     email,
     password,
@@ -49,6 +49,18 @@ const createUser = async (req, res, next) => {
         400,
       ),
     );
+  }
+
+  if (role === "SUPERVISOR") {
+    regionIds = Array.isArray(regionIds) ? regionIds : [regionIds];
+  } else {
+    regionIds = undefined;
+  }
+
+  if (role === "MEDICAL_REP") {
+    subRegionIds = Array.isArray(subRegionIds) ? subRegionIds : [subRegionIds];
+  } else {
+    subRegionIds = undefined;
   }
 
   let resumeFiles = [];
@@ -132,7 +144,7 @@ const createUser = async (req, res, next) => {
 
       resume,
 
-      certificates: certificates?.length ? { set: certificates } : null,
+      certificates: certificates?.length ? { set: certificates } : [],
     },
   });
 

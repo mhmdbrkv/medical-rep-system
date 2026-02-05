@@ -13,6 +13,9 @@ import regionRoutes from "./region.route.js";
 import subRegionRoutes from "./subRegion.route.js";
 import appraisalRoutes from "./appraisal.route.js";
 import forecastRoutes from "./forecast.route.js";
+import productRoutes from "./product.route.js";
+import pharmacyRoutes from "./pharmacy.route.js";
+import saleRoutes from "./sale.route.js";
 
 export default (app) => {
   app.use("/api/auth", authRoutes);
@@ -30,4 +33,7 @@ export default (app) => {
   app.use("/api/sub-regions", subRegionRoutes);
   app.use("/api/appraisals", appraisalRoutes);
   app.use("/api/forecasts", forecastRoutes);
+  app.use("/api/products", productRoutes);
+  app.use("/api/pharmacies", pharmacyRoutes);
+  app.use("/api/sales", saleRoutes);
 };

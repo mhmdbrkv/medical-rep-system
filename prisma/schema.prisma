@@ -298,3 +298,38 @@ model forecast {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Products {
+  id          String @id @default(uuid())
+  name        String
+  internalRef String
+  salesPrice  Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Pharmacy {
+  id        String @id @default(uuid())
+  name      String
+  city      String
+  region    String
+  subRegion String
+  country   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sales {
+  id           String   @id @default(uuid())
+  customer     String
+  order        String
+  orderDate    DateTime
+  product      String
+  qtyOrdered   Int
+  untaxedTotal Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
