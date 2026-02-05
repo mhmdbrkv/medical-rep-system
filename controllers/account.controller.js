@@ -1,23 +1,23 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 
-const addHospital = async (req, res, next) => {
+const addAccount = async (req, res, next) => {
   try {
-    const hospital = await prisma.hospital.create({ data: req.body });
+    const account = await prisma.account.createMany({ data: req.body });
     res.status(201).json({
       status: "success",
       message: "Data created successfully",
-      data: hospital,
+      data: account,
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to create hospital", 500));
+    next(new ApiError("Failed to create account", 500));
   }
 };
 
-const getAllHospitals = async (req, res, next) => {
+const getAllAccounts = async (req, res, next) => {
   try {
-    const hospitals = await prisma.hospital.findMany({
+    const accounts = await prisma.account.findMany({
       include: {
         doctors: {
           select: {
@@ -31,13 +31,13 @@ const getAllHospitals = async (req, res, next) => {
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      results: hospitals.length,
-      data: hospitals,
+      results: accounts.length,
+      data: accounts,
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch hospitals", 500));
+    next(new ApiError("Failed to fetch accounts", 500));
   }
 };
 
-export { addHospital, getAllHospitals };
+export { addAccount, getAllAccounts };

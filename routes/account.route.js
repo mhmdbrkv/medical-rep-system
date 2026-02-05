@@ -2,14 +2,14 @@ import express from "express";
 const router = express.Router();
 
 import {
-  addHospital,
-  getAllHospitals,
-} from "../controllers/hospital.controller.js";
+  addAccount,
+  getAllAccounts,
+} from "../controllers/account.controller.js";
 import { guard, allowedTo } from "../middlewares/auth.middleware.js";
 
 router.use(guard);
 
-router.get("/", getAllHospitals);
-router.post("/", allowedTo("MANAGER"), addHospital);
+router.get("/", getAllAccounts);
+router.post("/", allowedTo("MANAGER"), addAccount);
 
 export default router;

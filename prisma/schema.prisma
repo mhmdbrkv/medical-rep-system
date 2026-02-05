@@ -199,41 +199,51 @@ model SubRegion {
   name     String
   regionId String
 
-  region    Region   @relation(fields: [regionId], references: [id])
+  region    Region     @relation(fields: [regionId], references: [id])
   reps      User[]
-  doctors   Doctor[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // doctors   Doctor[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  accounts  Accounts[]
 }
 
 model Doctor {
-  id                String   @id @default(uuid())
-  name              String
-  email             String
-  phone             String
-  avgPatientsPerDay Int
-  dateOfBirth       DateTime
-  specialty         String
-  planId            String?  @unique
-  LicenseNumber     String
+  id                String  @id @default(uuid())
+  nameAR            String?
+  nameEN            String?
+  email             String?
+  phone             String?
+  grade             String?
+  avgPatientsPerDay Int?
+  specialty         String?
+  planId            String? @unique
+  LicenseNumber     String?
   latitude          Float?
   longitude         Float?
-  isActive          Boolean  @default(true)
+  isActive          Boolean @default(true)
 
-  hospitals Hospital[]
-  plan      Plan?            @relation(fields: [planId], references: [id])
-  subRegion SubRegion[]
+  accountName String?
+  subRegion   String?
+  area        String?
+
+  // account   Accounts[]
+  // subRegion SubRegion[]
+  accounts   Accounts? @relation(fields: [accountsId], references: [id])
+  accountsId String?
+
   visits    Visit[]
   coachings CoachingReport[]
+  plan      Plan?            @relation(fields: [planId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Hospital {
-  id       String @id @default(uuid())
-  name     String
-  location String
+model Accounts {
+  id          String     @id @default(uuid())
+  name        String
+  subRegionId String?
+  subRegion   SubRegion? @relation(fields: [subRegionId], references: [id])
 
   doctors Doctor[]
 

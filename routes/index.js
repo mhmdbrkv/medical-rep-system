@@ -4,7 +4,7 @@ import repRoutes from "./rep.route.js";
 import supervisorRoutes from "./supervisor.route.js";
 import managerRoutes from "./manager.route.js";
 import doctorRoutes from "./doctor.route.js";
-import hospitalRoutes from "./hospital.route.js";
+import accountRoutes from "./account.route.js";
 import visitRoutes from "./visit.route.js";
 import requestRoutes from "./request.route.js";
 import planRoutes from "./plan.route.js";
@@ -24,7 +24,7 @@ export default (app) => {
   app.use("/api/supervisors", supervisorRoutes);
   app.use("/api/managers", managerRoutes);
   app.use("/api/doctors", doctorRoutes);
-  app.use("/api/hospitals", hospitalRoutes);
+  app.use("/api/accounts", accountRoutes);
   app.use("/api/visits", visitRoutes);
   app.use("/api/requests", requestRoutes);
   app.use("/api/plans", planRoutes);
