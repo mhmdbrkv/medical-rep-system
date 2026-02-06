@@ -39,6 +39,11 @@ const getOneDoctor = async (req, res, next) => {
 
   const doctor = await prisma.doctor.findUnique({
     where: { id },
+    include: {
+      visits: true,
+      plan: true,
+      coachings: true,
+    },
   });
 
   if (!doctor) {

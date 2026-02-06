@@ -305,25 +305,6 @@ const getManagerTeam = async (req, res, next) => {
     }
     const team = await prisma.user.findMany({
       where: { managerId: req.user.id, ...filter },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        role: true,
-        createdAt: true,
-        reps: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            role: true,
-            supervisorId: true,
-            createdAt: true,
-          },
-        },
-      },
     });
 
     let supervisorsCount = 0;
