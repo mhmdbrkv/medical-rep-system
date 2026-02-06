@@ -32,12 +32,14 @@ model User {
   leaveDaysCount      Int?      @default(0)
   leaveDaysTakenCount Int?      @default(0)
 
-  subRegions   SubRegion[]
+  subRegion   SubRegion? @relation(fields: [subRegionId], references: [id])
+  subRegionId String?
+
   supervisorId String? // Reps belong to a supervisor
   managerId    String?
-  supervisor   User?       @relation("SupervisorToReps", fields: [supervisorId], references: [id])
-  manager      User?       @relation("manager", fields: [managerId], references: [id])
-  reps         User[]      @relation("SupervisorToReps")
+  supervisor   User?     @relation("SupervisorToReps", fields: [supervisorId], references: [id])
+  manager      User?     @relation("manager", fields: [managerId], references: [id])
+  reps         User[]    @relation("SupervisorToReps")
   visits       Visit[]
   requests     Request[]
 
@@ -216,7 +218,7 @@ model Doctor {
   grade             String?
   avgPatientsPerDay Int?
   specialty         String?
-  planId            String? @unique
+  planId            String?
   LicenseNumber     String?
   latitude          Float?
   longitude         Float?
@@ -317,6 +319,7 @@ model Products {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  sales     Sales[]
 }
 
 model Pharmacy {
@@ -336,7 +339,8 @@ model Sales {
   customer     String
   order        String
   orderDate    DateTime
-  product      String
+  productId    String
+  product      Products @relation(fields: [productId], references: [id])
   qtyOrdered   Int
   untaxedTotal Float
 

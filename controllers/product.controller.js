@@ -3,8 +3,8 @@ import { prisma } from "../config/db.js";
 const addProduct = async (req, res, next) => {
   const { name, internalRef, salesPrice } = req.body;
 
-  const product = await prisma.products.create({
-    data: { name, internalRef, salesPrice },
+  const product = await prisma.products.createMany({
+    data: req.body,
   });
   res.status(201).json({
     status: "success",

@@ -27,7 +27,7 @@ const getVisits = async (req, res) => {
   const data = await prisma.visit.findMany({
     where: { userId: req.user.id },
     include: {
-      doctor: { select: { id: true, name: true } },
+      doctor: { select: { id: true, nameAR: true, nameEN: true } },
       createdBy: { select: { id: true, name: true } },
     },
   });
@@ -85,7 +85,7 @@ const getAllVisitReports = async (req, res) => {
         select: {
           id: true,
           date: true,
-          doctor: { select: { id: true, name: true } },
+          doctor: { select: { id: true, nameAR: true, nameEN: true } },
         },
       },
     },

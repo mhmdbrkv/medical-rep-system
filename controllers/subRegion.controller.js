@@ -42,14 +42,7 @@ const getAllSubRegions = async (req, res) => {
           phone: true,
         },
       },
-      doctors: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-        },
-      },
+
       createdAt: true,
     },
   });

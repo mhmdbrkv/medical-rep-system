@@ -25,6 +25,8 @@ const createPlan = async (req, res, next) => {
     repId = req.body.repId;
   }
 
+  const doctorConnections = doctors.map((id) => ({ id }));
+
   const data = await prisma.plan.create({
     data: {
       title,
@@ -33,11 +35,11 @@ const createPlan = async (req, res, next) => {
       description,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
-      doctors: { connect: doctors.map((id) => ({ id })) },
+      doctors: { connect: doctorConnections },
       objectives,
       createdBy: { connect: { id: req.user.id } },
       rep: { connect: { id: repId } },
-      targetDoctors,
+      targetDoctors: doctorConnections.length,
       targetVisits,
     },
   });
@@ -52,7 +54,7 @@ const getAllPlans = async (req, res) => {
   const data = await prisma.plan.findMany({
     where: { createdBy: { id: req.user.id } },
     include: {
-      doctors: { select: { id: true, name: true } },
+      doctors: { select: { id: true, nameAR: true, nameEN: true } },
       createdBy: { select: { id: true, name: true } },
     },
   });

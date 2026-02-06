@@ -16,7 +16,7 @@ const createUser = async (req, res, next) => {
     educationBackground,
     role,
     regionIds,
-    subRegionIds,
+    subRegionId,
     supervisorId,
     iqamaNumber,
     passportNumber,
@@ -58,9 +58,9 @@ const createUser = async (req, res, next) => {
   }
 
   if (role === "MEDICAL_REP") {
-    subRegionIds = Array.isArray(subRegionIds) ? subRegionIds : [subRegionIds];
+    subRegionId = Array.isArray(subRegionId) ? subRegionId[0] : subRegionId;
   } else {
-    subRegionIds = undefined;
+    subRegionId = undefined;
   }
 
   let resumeFiles = [];
@@ -112,7 +112,7 @@ const createUser = async (req, res, next) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   // create new user
-  const newUser = await prisma.user.create({
+  const newUser = await prisma.user.createMany({
     data: {
       name,
       email,
@@ -136,14 +136,11 @@ const createUser = async (req, res, next) => {
           }
         : undefined,
 
-      subRegions: subRegionIds?.length
-        ? {
-            connect: subRegionIds.map((id) => ({ id })),
-          }
-        : undefined,
+      subRegion: {
+        connect: subRegionId,
+      },
 
       resume,
-
       certificates: certificates?.length ? { set: certificates } : [],
     },
   });
@@ -323,7 +320,6 @@ const getManagerTeam = async (req, res, next) => {
             phone: true,
             role: true,
             supervisorId: true,
-
             createdAt: true,
           },
         },
