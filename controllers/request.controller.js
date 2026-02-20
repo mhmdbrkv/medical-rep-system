@@ -26,7 +26,42 @@ const getMyRequests = async (req, res, next) => {
 
 const createRequest = async (req, res, next) => {
   try {
-    const { title, subject, description, type, urgency } = req.body;
+    const {
+      title,
+      subject,
+      description,
+      type,
+      urgency,
+      leaveStartDate,
+      leaveEndDate,
+    } = req.body;
+
+    let leaveDaysCount = 0;
+    let totalLeaveDays = 0;
+
+    if (type === "LEAVE") {
+      if (!leaveStartDate || !leaveEndDate) {
+        return next(
+          new ApiError("Leave start and end dates are required", 400),
+        );
+      }
+
+      if (new Date(leaveStartDate) >= new Date(leaveEndDate)) {
+        return next(
+          new ApiError("Leave start date cannot be after end date", 400),
+        );
+      }
+
+      leaveDaysCount = Math.ceil(
+        (new Date(leaveEndDate) - new Date(leaveStartDate)) /
+          (1000 * 60 * 60 * 24) +
+          1,
+      );
+      const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+
+      totalLeaveDays = user.leaveDaysCountTotal || 0 + leaveDaysCount;
+    }
+
     const data = await prisma.request.create({
       data: {
         title,
@@ -35,8 +70,12 @@ const createRequest = async (req, res, next) => {
         type,
         urgency,
         userId: req.user.id,
+        leaveStartDate: type === "LEAVE" ? new Date(leaveStartDate) : null,
+        leaveEndDate: type === "LEAVE" ? new Date(leaveEndDate) : null,
+        leaveDaysCountTotal: type === "LEAVE" ? totalLeaveDays : null,
       },
     });
+
     res.status(201).json({
       status: "success",
       message: "Data created successfully",

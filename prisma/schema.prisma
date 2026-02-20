@@ -29,8 +29,7 @@ model User {
 
   leaveStartDate      DateTime?
   leaveEndDate        DateTime?
-  leaveDaysCount      Int?      @default(0)
-  leaveDaysTakenCount Int?      @default(0)
+  leaveDaysCountTotal Int?      @default(0)
 
   subRegion   SubRegion? @relation(fields: [subRegionId], references: [id])
   subRegionId String?
