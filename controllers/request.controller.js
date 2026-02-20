@@ -98,6 +98,18 @@ const updateRequest = async (req, res, next) => {
         handledAt: new Date(),
       },
     });
+
+    if (status === "APPROVED" && data.type === "LEAVE") {
+      await prisma.user.update({
+        where: { id: data.userId },
+        data: {
+          leaveDaysCountTotal: {
+            increment: data.leaveDaysCount || 0,
+          },
+        },
+      });
+    }
+
     res.status(200).json({
       status: "success",
       message: "Data updated successfully",
