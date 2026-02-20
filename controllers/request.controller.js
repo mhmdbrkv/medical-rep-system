@@ -37,7 +37,6 @@ const createRequest = async (req, res, next) => {
     } = req.body;
 
     let leaveDaysCount = 0;
-    let totalLeaveDays = 0;
 
     if (type === "LEAVE") {
       if (!leaveStartDate || !leaveEndDate) {
@@ -57,9 +56,6 @@ const createRequest = async (req, res, next) => {
           (1000 * 60 * 60 * 24) +
           1,
       );
-      const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-
-      totalLeaveDays = user.leaveDaysCountTotal || 0 + leaveDaysCount;
     }
 
     const data = await prisma.request.create({
@@ -72,7 +68,7 @@ const createRequest = async (req, res, next) => {
         userId: req.user.id,
         leaveStartDate: type === "LEAVE" ? new Date(leaveStartDate) : null,
         leaveEndDate: type === "LEAVE" ? new Date(leaveEndDate) : null,
-        leaveDaysCountTotal: type === "LEAVE" ? totalLeaveDays : null,
+        leaveDaysCount: type === "LEAVE" ? leaveDaysCount : null,
       },
     });
 
