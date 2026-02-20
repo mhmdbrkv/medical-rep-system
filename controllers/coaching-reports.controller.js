@@ -62,7 +62,7 @@ const responseToCoachingReport = async (req, res, next) => {
         exists.createdById !== req.user.managerId)
     ) {
       return next(
-        new ApiError("Forbidden, you can only access your own data", 403)
+        new ApiError("Forbidden, you can only access your own data", 403),
       );
     }
 
@@ -130,7 +130,8 @@ const getMyCoachingReport = async (req, res, next) => {
         doctor: {
           select: {
             id: true,
-            name: true,
+            nameAR: true,
+            nameEN: true,
             email: true,
             phone: true,
           },
@@ -185,7 +186,8 @@ const getAllCoachingReport = async (req, res, next) => {
         doctor: {
           select: {
             id: true,
-            name: true,
+            nameAR: true,
+            nameEN: true,
             email: true,
             phone: true,
           },
@@ -243,7 +245,8 @@ const getRepCoachingReport = async (req, res, next) => {
         doctor: {
           select: {
             id: true,
-            name: true,
+            nameAR: true,
+            nameEN: true,
             email: true,
             phone: true,
           },
