@@ -34,14 +34,15 @@ const createRequest = async (req, res, next) => {
       urgency,
       leaveStartDate,
       leaveEndDate,
+      leaveType,
     } = req.body;
 
     let leaveDaysCount = 0;
 
     if (type === "LEAVE") {
-      if (!leaveStartDate || !leaveEndDate) {
+      if (!leaveStartDate || !leaveEndDate || !leaveType) {
         return next(
-          new ApiError("Leave start and end dates are required", 400),
+          new ApiError("Leave start and end dates and type are required", 400),
         );
       }
 
@@ -69,6 +70,7 @@ const createRequest = async (req, res, next) => {
         leaveStartDate: type === "LEAVE" ? new Date(leaveStartDate) : null,
         leaveEndDate: type === "LEAVE" ? new Date(leaveEndDate) : null,
         leaveDaysCount: type === "LEAVE" ? leaveDaysCount : null,
+        leaveType: type === "LEAVE" ? leaveType : null,
       },
     });
 

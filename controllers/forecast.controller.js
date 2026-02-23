@@ -46,4 +46,43 @@ const getForecasts = async (req, res, next) => {
   }
 };
 
-export { createForecast, getForecasts };
+const getAllForecasts = async (req, res, next) => {
+  try {
+    const forecasts = await prisma.forecast.findMany({
+      include: { rep: { select: { id: true, name: true, email: true } } },
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Data fetched successfully",
+      data: {
+        results: forecasts.length,
+        forecasts,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return next(new ApiError(`Get Forecasts Error: ${err}`));
+  }
+};
+
+const updateForecast = async (req, res, next) => {
+  const { id } = req.params;
+  const { isApproved, supervisorFeedback } = req.body;
+  try {
+    const forecast = await prisma.forecast.update({
+      where: { id },
+      data: { isApproved, supervisorFeedback },
+    });
+    res.status(200).json({
+      status: "success",
+      message: "Data updated successfully",
+      data: forecast,
+    });
+  } catch (err) {
+    console.error(err);
+    return next(new ApiError(`Update Forecast Error: ${err}`));
+  }
+};
+
+export { createForecast, getForecasts, updateForecast, getAllForecasts };
