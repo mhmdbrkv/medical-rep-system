@@ -301,8 +301,27 @@ const getUserDetails = async (req, res, next) => {
   let totalSales = 0;
   // 1) Get user subRegion
   const userSubRegion = user.subRegion?.name;
-  // 2) Get sales for that subRegion
-  const subRegionSales = await prisma.sales.findMany({});
+
+  // 2) Get accounts in the same subRegion
+  let allAccounts = [];
+  const pharmAccounts = await prisma.pharmacy.findMany({
+    where: { subRegion: userSubRegion },
+  });
+
+  allAccounts = [...allAccounts, ...pharmAccounts];
+
+  // 3) get sales for accounts in the same subRegion
+  const sales = await prisma.sales.findMany({});
+
+  for (const account of allAccounts) {
+    const accountSales = sales.filter(
+      (sale) => sale.customer?.toString() === account.name?.toString(),
+    );
+    totalSales += accountSales.reduce(
+      (sum, sale) => sum + sale.untaxedTotal,
+      0,
+    );
+  }
 
   res.status(200).json({
     status: "success",
