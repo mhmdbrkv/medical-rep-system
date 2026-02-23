@@ -230,33 +230,50 @@ const getUserDetails = async (req, res, next) => {
       email: true,
       phone: true,
       role: true,
-      supervisorId: true,
-      createdAt: true,
+      dateOfBirth: true,
+      dateOfRecruitment: true,
+      department: true,
+      location: true,
+      bio: true,
+      educationBackground: true,
+      iqamaNumber: true,
+      passportNumber: true,
+      resume: true,
+      certificates: true,
       lastLogin: true,
       isActive: true,
-      regions: {
-        select: {
-          id: true,
-          name: true,
-          country: true,
-        },
-      },
-      supervisor: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-        },
-      },
-      manager: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-        },
-      },
+      profileImage: true,
+
+      leaveStartDate: true,
+      leaveEndDate: true,
+      leaveDaysCountTotal: true,
+
+      regions: true,
+      subRegion: true,
+      subRegionId: true,
+
+      supervisorId: true,
+      managerId: true,
+      supervisor: true,
+      manager: true,
+      reps: true,
+      visits: true,
+      requests: true,
+
+      visitReports: true,
+      plans: true,
+      repPlans: true,
+      users: true,
+
+      coachings: true,
+      repCoachings: true,
+
+      appraisalsByManager: true,
+      appraisalsForRep: true,
+      forecasts: true,
+
+      createdAt: true,
+      updatedAt: true,
     },
   });
 
@@ -270,6 +287,23 @@ const getUserDetails = async (req, res, next) => {
       new Date().getFullYear() - new Date(user.createdAt).getFullYear();
   }
 
+  //number of total visits
+  const totalVisits = await prisma.visit.count({
+    where: { userId: user.id, status: "COMPLETED" },
+  });
+
+  // appraisals
+  const appraisalsForRep = await prisma.appraisal.findMany({
+    where: { repId: user.id },
+  });
+
+  // total sales
+  let totalSales = 0;
+  // 1) Get user subRegion
+  const userSubRegion = user.subRegion?.name;
+  // 2) Get sales for that subRegion
+  const subRegionSales = await prisma.sales.findMany({});
+
   res.status(200).json({
     status: "success",
     message: "User fetched successfully",
@@ -278,6 +312,9 @@ const getUserDetails = async (req, res, next) => {
       lastLogin: user?.lastLogin,
       joinDate: user?.createdAt,
       reportsTo: user?.supervisor,
+      totalVisits,
+      appraisalsForRep,
+      totalSales,
       user,
     },
   });

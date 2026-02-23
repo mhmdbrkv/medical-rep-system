@@ -77,7 +77,7 @@ const addVisitReports = async (req, res) => {
   });
 };
 
-const getAllVisitReports = async (req, res) => {
+const getMyVisitReports = async (req, res) => {
   const data = await prisma.visitReport.findMany({
     where: { userId: req.user.id },
     include: {
@@ -100,4 +100,32 @@ const getAllVisitReports = async (req, res) => {
   });
 };
 
-export { scheduleVisit, getVisits, addVisitReports, getAllVisitReports };
+const getAllVisitReports = async (req, res) => {
+  const data = await prisma.visitReport.findMany({
+    include: {
+      visit: {
+        select: {
+          id: true,
+          date: true,
+          doctor: { select: { id: true, nameAR: true, nameEN: true } },
+        },
+      },
+    },
+  });
+  res.status(200).json({
+    status: "success",
+    message: "Data fetched successfully",
+    data: {
+      results: data.length,
+      data,
+    },
+  });
+};
+
+export {
+  scheduleVisit,
+  getVisits,
+  addVisitReports,
+  getMyVisitReports,
+  getAllVisitReports,
+};
