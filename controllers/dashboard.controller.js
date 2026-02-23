@@ -7,13 +7,12 @@ const getRepsDashboard = async (req, res, next) => {
     const userId = req.user.id;
     const now = new Date();
 
-    // Define date boundaries without mutating 'now'
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
     const endOfToday = new Date(new Date().setHours(23, 59, 59, 999));
 
-    // 1. Get Rep and SubRegion first (needed for account counts)
+    // 1. Get Rep and SubRegion
     const rep = await prisma.user.findUnique({
       where: { id: userId },
       include: { subRegion: true },
@@ -21,7 +20,9 @@ const getRepsDashboard = async (req, res, next) => {
 
     if (!rep) return res.status(404).json({ message: "Rep not found" });
 
-    // 2. Run independent queries in parallel
+    const userSubRegion = rep.subRegion?.name;
+
+    // 2. Run EVERYTHING in parallel, including the optimized Sales query
     const [
       docCount,
       pharmCount,
@@ -29,9 +30,10 @@ const getRepsDashboard = async (req, res, next) => {
       completedVisits,
       pendingRequests,
       todayVisits,
+      pharmacyNames, // We need names to filter sales
     ] = await Promise.all([
-      prisma.doctor.count({ where: { subRegion: rep.subRegion?.name } }),
-      prisma.pharmacy.count({ where: { subRegion: rep.subRegion?.name } }),
+      prisma.doctor.count({ where: { subRegion: userSubRegion } }),
+      prisma.pharmacy.count({ where: { subRegion: userSubRegion } }),
       prisma.plan.findMany({
         where: {
           repId: userId,
@@ -50,9 +52,26 @@ const getRepsDashboard = async (req, res, next) => {
       prisma.visit.findMany({
         where: { userId: userId, date: { gte: startOfToday, lt: endOfToday } },
       }),
+      // Get only the names of pharmacies in this subregion
+      prisma.pharmacy.findMany({
+        where: { subRegion: userSubRegion },
+        select: { name: true },
+      }),
     ]);
 
-    // 3. Calculations
+    // 3. Optimized Sales Aggregation (Database-level)
+    const namesArray = pharmacyNames.map((p) => p.name);
+
+    const salesAggregate = await prisma.sales.aggregate({
+      _sum: { untaxedTotal: true },
+      where: {
+        customer: { in: namesArray },
+      },
+    });
+
+    const totalSales = salesAggregate._sum.untaxedTotal || 0;
+
+    // 4. Metric Calculations
     const totalAccounts = docCount + pharmCount;
     const targetDoctorsPlanned = plans.reduce(
       (sum, p) => sum + (p.targetDoctors || 0),
@@ -71,32 +90,6 @@ const getRepsDashboard = async (req, res, next) => {
       targetVisitsPlanned > 0
         ? ((completedVisits / targetVisitsPlanned) * 100).toFixed(2)
         : 0;
-
-    // calc total sales
-    let totalSales = 0;
-    // 1) Get user subRegion
-    const userSubRegion = rep.subRegion?.name;
-
-    // 2) Get accounts in the same subRegion
-    let allAccounts = [];
-    const pharmAccounts = await prisma.pharmacy.findMany({
-      where: { subRegion: userSubRegion },
-    });
-
-    allAccounts = [...allAccounts, ...pharmAccounts];
-
-    // 3) get sales for accounts in the same subRegion
-    const sales = await prisma.sales.findMany({});
-
-    for (const account of allAccounts) {
-      const accountSales = sales.filter(
-        (sale) => sale.customer?.toString() === account.name?.toString(),
-      );
-      totalSales += accountSales.reduce(
-        (sum, sale) => sum + sale.untaxedTotal,
-        0,
-      );
-    }
 
     res.status(200).json({
       status: "success",

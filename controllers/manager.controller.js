@@ -220,123 +220,74 @@ const getAllUsers = async (req, res) => {
 
 // Get user details
 const getUserDetails = async (req, res, next) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      role: true,
-      dateOfBirth: true,
-      dateOfRecruitment: true,
-      department: true,
-      location: true,
-      bio: true,
-      educationBackground: true,
-      iqamaNumber: true,
-      passportNumber: true,
-      resume: true,
-      certificates: true,
-      lastLogin: true,
-      isActive: true,
-      profileImage: true,
+    // 1. Fetch User with all necessary relations in one go
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        supervisor: true,
+        manager: true,
+        subRegion: true,
+        appraisalsForRep: true, // Fetching these directly via relation
+      },
+    });
 
-      leaveStartDate: true,
-      leaveEndDate: true,
-      leaveDaysCountTotal: true,
+    if (!user) {
+      return next(new ApiError("User not found", 404));
+    }
 
-      regions: true,
-      subRegion: true,
-      subRegionId: true,
+    // 2. Parallelize independent queries for speed
+    const [totalVisits, subRegionSales] = await Promise.all([
+      // Count completed visits
+      prisma.visit.count({
+        where: { userId: id, status: "COMPLETED" },
+      }),
 
-      supervisorId: true,
-      managerId: true,
-      supervisor: true,
-      manager: true,
-      reps: true,
-      visits: true,
-      requests: true,
+      // Aggregate sales for the subregion directly in the DB
+      // Note: This assumes 'customer' in Sales matches 'name' in Pharmacy
+      prisma.sales.aggregate({
+        _sum: {
+          untaxedTotal: true,
+        },
+        where: {
+          customer: {
+            in: await prisma.pharmacy
+              .findMany({
+                where: { subRegion: user.subRegion?.name },
+                select: { name: true },
+              })
+              .then((pharms) => pharms.map((p) => p.name)),
+          },
+        },
+      }),
+    ]);
 
-      visitReports: true,
-      plans: true,
-      repPlans: true,
-      users: true,
+    // 3. Calculate Years of Experience
+    const yearsOfExperience = user.createdAt
+      ? new Date().getFullYear() - new Date(user.createdAt).getFullYear()
+      : 0;
 
-      coachings: true,
-      repCoachings: true,
+    const totalSales = subRegionSales._sum.untaxedTotal || 0;
 
-      appraisalsByManager: true,
-      appraisalsForRep: true,
-      forecasts: true,
-
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-
-  if (!user) {
-    return next(new ApiError("User not found", 404));
+    res.status(200).json({
+      status: "success",
+      message: "User fetched successfully",
+      data: {
+        yearsOfExperience,
+        lastLogin: user.lastLogin,
+        joinDate: user.createdAt,
+        reportsTo: user.supervisor,
+        totalVisits,
+        appraisalsForRep: user.appraisalsForRep,
+        totalSales,
+        user,
+      },
+    });
+  } catch (error) {
+    next(error);
   }
-
-  let yearsOfExperience = 0;
-  if (user?.createdAt) {
-    yearsOfExperience =
-      new Date().getFullYear() - new Date(user.createdAt).getFullYear();
-  }
-
-  //number of total visits
-  const totalVisits = await prisma.visit.count({
-    where: { userId: user.id, status: "COMPLETED" },
-  });
-
-  // appraisals
-  const appraisalsForRep = await prisma.appraisal.findMany({
-    where: { repId: user.id },
-  });
-
-  // total sales
-  let totalSales = 0;
-  // 1) Get user subRegion
-  const userSubRegion = user.subRegion?.name;
-
-  // 2) Get accounts in the same subRegion
-  let allAccounts = [];
-  const pharmAccounts = await prisma.pharmacy.findMany({
-    where: { subRegion: userSubRegion },
-  });
-
-  allAccounts = [...allAccounts, ...pharmAccounts];
-
-  // 3) get sales for accounts in the same subRegion
-  const sales = await prisma.sales.findMany({});
-
-  for (const account of allAccounts) {
-    const accountSales = sales.filter(
-      (sale) => sale.customer?.toString() === account.name?.toString(),
-    );
-    totalSales += accountSales.reduce(
-      (sum, sale) => sum + sale.untaxedTotal,
-      0,
-    );
-  }
-
-  res.status(200).json({
-    status: "success",
-    message: "User fetched successfully",
-    data: {
-      yearsOfExperience,
-      lastLogin: user?.lastLogin,
-      joinDate: user?.createdAt,
-      reportsTo: user?.supervisor,
-      totalVisits,
-      appraisalsForRep,
-      totalSales,
-      user,
-    },
-  });
 };
 
 // Update one user by id
