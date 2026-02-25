@@ -38,19 +38,19 @@ const getRepsDashboard = async (req, res, next) => {
         where: {
           repId: userId,
           status: "APPROVED",
-          startDate: { gte: startOfMonth, lt: endOfMonth },
+          startDate: { gte: startOfMonth, lte: endOfMonth },
         },
       }),
       prisma.visit.count({
         where: {
           userId: userId,
-          date: { gte: startOfMonth, lt: endOfMonth },
+          date: { gte: startOfMonth, lte: endOfMonth },
           status: "COMPLETED",
         },
       }),
       prisma.request.findMany({ where: { userId, status: "PENDING" } }),
       prisma.visit.findMany({
-        where: { userId: userId, date: { gte: startOfToday, lt: endOfToday } },
+        where: { userId: userId, date: { gte: startOfToday, lte: endOfToday } },
       }),
       // Get only the names of pharmacies in this subregion
       prisma.pharmacy.findMany({
@@ -159,7 +159,7 @@ const getManagersDashboard = async (req, res, next) => {
 
       // Monthly Plans
       prisma.plan.findMany({
-        where: { startDate: { gte: startOfMonth, lt: endOfMonth } },
+        where: { startDate: { gte: startOfMonth, lte: endOfMonth } },
       }),
     ]);
 
