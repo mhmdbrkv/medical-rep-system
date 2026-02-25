@@ -91,6 +91,8 @@ const getRepsDashboard = async (req, res, next) => {
         ? ((completedVisits / targetVisitsPlanned) * 100).toFixed(2)
         : 0;
 
+    console.log(todayVisits);
+
     res.status(200).json({
       status: "success",
       data: {
