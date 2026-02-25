@@ -13,14 +13,6 @@ const getRepsDashboard = async (req, res, next) => {
     const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
     const endOfToday = new Date(new Date().setHours(23, 59, 59, 999));
 
-    const dayBefore = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - 1,
-    );
-
-    console.log(dayBefore);
-
     // 1. Get Rep and SubRegion
     const rep = await prisma.user.findUnique({
       where: { id: userId },
@@ -59,7 +51,7 @@ const getRepsDashboard = async (req, res, next) => {
       }),
       prisma.request.findMany({ where: { userId, status: "PENDING" } }),
       prisma.visit.findMany({
-        where: { userId: userId, date: { equals: dayBefore } },
+        where: { userId: userId, date: { gte: startOfToday, lte: endOfToday } },
       }),
       // Get only the names of pharmacies in this subregion
       prisma.pharmacy.findMany({
