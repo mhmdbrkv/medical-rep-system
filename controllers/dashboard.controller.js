@@ -1,5 +1,6 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
+import { startOfDay, endOfDay } from "date-fns";
 
 // Get Reps Dashboard
 const getRepsDashboard = async (req, res, next) => {
@@ -9,8 +10,10 @@ const getRepsDashboard = async (req, res, next) => {
 
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
-    const endOfToday = new Date(new Date().setHours(23, 59, 59, 999));
+    const startOfToday = startOfDay(new Date());
+    const endOfToday = endOfDay(new Date());
+    // const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
+    // const endOfToday = new Date(new Date().setHours(23, 59, 59, 999));
 
     // 1. Get Rep and SubRegion
     const rep = await prisma.user.findUnique({
@@ -90,8 +93,6 @@ const getRepsDashboard = async (req, res, next) => {
       targetVisitsPlanned > 0
         ? ((completedVisits / targetVisitsPlanned) * 100).toFixed(2)
         : 0;
-
-    console.log(todayVisits);
 
     res.status(200).json({
       status: "success",
