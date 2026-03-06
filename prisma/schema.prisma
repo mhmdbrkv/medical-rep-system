@@ -163,6 +163,10 @@ model Request {
   leaveType      String?
   leaveDaysCount Int?
 
+  budget   Float?
+  products Products[]
+  doctors  Doctor[]
+
   user User @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
@@ -236,8 +240,9 @@ model Doctor {
   coachings CoachingReport[]
   plan      Plan?            @relation(fields: [planId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  request   Request[]
 }
 
 model Accounts {
@@ -316,9 +321,10 @@ model Products {
   internalRef String
   salesPrice  Float
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   sales     Sales[]
+  request   Request[]
 }
 
 model Pharmacy {

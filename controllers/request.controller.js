@@ -35,28 +35,61 @@ const createRequest = async (req, res, next) => {
       leaveStartDate,
       leaveEndDate,
       leaveType,
+      productIds,
+      doctorIds,
+      budget,
     } = req.body;
 
-    let leaveDaysCount = 0;
+    // Validate common required fields
+    if (!title || !subject || !type) {
+      return next(new ApiError("Title, subject, and type are required", 400));
+    }
+
+    let leaveDaysCount = null;
+    let resolvedProductIds = [];
+    let resolvedDoctorIds = [];
 
     if (type === "LEAVE") {
       if (!leaveStartDate || !leaveEndDate || !leaveType) {
         return next(
-          new ApiError("Leave start and end dates and type are required", 400),
+          new ApiError(
+            "Leave start date, end date, and type are required",
+            400,
+          ),
         );
       }
 
-      if (new Date(leaveStartDate) >= new Date(leaveEndDate)) {
+      const start = new Date(leaveStartDate);
+      const end = new Date(leaveEndDate);
+
+      // Fix 1: use > instead of >= to allow same-day leave
+      if (start > end) {
         return next(
           new ApiError("Leave start date cannot be after end date", 400),
         );
       }
 
-      leaveDaysCount = Math.ceil(
-        (new Date(leaveEndDate) - new Date(leaveStartDate)) /
-          (1000 * 60 * 60 * 24) +
-          1,
-      );
+      // Fix 2: +1 must be outside Math.ceil(), not inside
+      leaveDaysCount = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    } else if (type === "EXPENSE" || type === "MARKETING") {
+      if (
+        !budget ||
+        !productIds ||
+        !Array.isArray(productIds) ||
+        productIds.length === 0
+      ) {
+        return next(
+          new ApiError("Budget and at least one product ID are required", 400),
+        );
+      }
+      resolvedProductIds = productIds;
+    } else if (type === "SAMPLE") {
+      if (!doctorIds || !Array.isArray(doctorIds) || doctorIds.length === 0) {
+        return next(new ApiError("At least one doctor ID is required", 400));
+      }
+      resolvedDoctorIds = doctorIds;
+    } else {
+      return next(new ApiError(`Invalid request type: ${type}`, 400));
     }
 
     const data = await prisma.request.create({
@@ -69,15 +102,19 @@ const createRequest = async (req, res, next) => {
         userId: req.user.id,
         leaveStartDate: type === "LEAVE" ? new Date(leaveStartDate) : null,
         leaveEndDate: type === "LEAVE" ? new Date(leaveEndDate) : null,
-        leaveDaysCount: type === "LEAVE" ? leaveDaysCount : null,
+        leaveDaysCount,
         leaveType: type === "LEAVE" ? leaveType : null,
+        budget: type === "EXPENSE" || type === "MARKETING" ? budget : null,
+        // Fix 3: only connect relevant relations per type
+        products: { connect: resolvedProductIds.map((id) => ({ id })) },
+        doctors: { connect: resolvedDoctorIds.map((id) => ({ id })) },
       },
     });
 
     res.status(201).json({
       status: "success",
       message: "Data created successfully",
-      data: data,
+      data,
     });
   } catch (error) {
     console.error(error);
