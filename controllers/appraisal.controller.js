@@ -11,6 +11,24 @@ const addAppraisal = async (req, res, next) => {
     complianceAndRegulations,
     teamworkAndCollaboration,
     feedbackComments,
+    presentationSkills,
+    sellingSkills,
+    reporting,
+    productInformation,
+    competitorsInformation,
+    organizationalValueAwareness,
+    properUtilizationOfResources,
+    reliabilityAndCredibility,
+    independenceAndJudgment,
+    teamSpirit,
+    personalDrive,
+    creativityAndInitiative,
+    broadProspective,
+    communicationSkills,
+    planningAndOrganizing,
+    appearance,
+    attitude,
+    timing,
   } = req.body;
 
   try {
@@ -18,6 +36,7 @@ const addAppraisal = async (req, res, next) => {
       data: {
         repId,
         managerId: req.user.id,
+
         period: new Date(period),
         salesPerformance,
         customerRelationships,
@@ -25,6 +44,25 @@ const addAppraisal = async (req, res, next) => {
         complianceAndRegulations,
         teamworkAndCollaboration,
         feedbackComments,
+
+        presentationSkills,
+        sellingSkills,
+        reporting,
+        productInformation,
+        competitorsInformation,
+        organizationalValueAwareness,
+        properUtilizationOfResources,
+        reliabilityAndCredibility,
+        independenceAndJudgment,
+        teamSpirit,
+        personalDrive,
+        creativityAndInitiative,
+        broadProspective,
+        communicationSkills,
+        planningAndOrganizing,
+        appearance,
+        attitude,
+        timing,
       },
     });
 
@@ -42,8 +80,21 @@ const getAppraisals = async (req, res, next) => {
   try {
     const appraisals = await prisma.appraisal.findMany({
       include: {
-        rep: true,
-        manager: true,
+        rep: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            subRegion: {
+              select: {
+                id: true,
+                name: true,
+                region: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+        manager: { select: { id: true, name: true, email: true } },
       },
     });
     res.status(200).json({

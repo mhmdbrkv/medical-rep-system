@@ -286,13 +286,31 @@ model Appraisal {
   rep     User   @relation("appraisalRep", fields: [repId], references: [id])
   manager User   @relation("appraisalManager", fields: [managerId], references: [id])
 
-  period                   DateTime
-  salesPerformance         Float
-  customerRelationships    Float
-  productKnowledge         Float
-  complianceAndRegulations Float
-  teamworkAndCollaboration Float
-  feedbackComments         String?
+  period                       DateTime
+  salesPerformance             Float
+  customerRelationships        Float
+  productKnowledge             Float
+  complianceAndRegulations     Float
+  teamworkAndCollaboration     Float
+  feedbackComments             String?
+  presentationSkills           Int?
+  sellingSkills                Int?
+  reporting                    Int?
+  productInformation           Int?
+  competitorsInformation       Int?
+  organizationalValueAwareness Int?
+  properUtilizationOfResources Int?
+  reliabilityAndCredibility    Int?
+  independenceAndJudgment      Int?
+  teamSpirit                   Int?
+  personalDrive                Int?
+  creativityAndInitiative      Int?
+  broadProspective             Int?
+  communicationSkills          Int?
+  planningAndOrganizing        Int?
+  appearance                   Int?
+  attitude                     Int?
+  timing                       Int?
 
   repId     String
   managerId String
