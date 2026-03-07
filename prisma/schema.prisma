@@ -71,6 +71,7 @@ model Plan {
   startDate          DateTime
   endDate            DateTime
   doctors            Doctor[]
+  doctorsWithDates   Json[]
   targetDoctors      Int
   targetVisits       Int
   objectives         String[]

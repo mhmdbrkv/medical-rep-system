@@ -4,6 +4,7 @@ const router = express.Router();
 import {
   createPlan,
   getAllPlans,
+  getMyPlans,
   getOnePlan,
   getPlansMGMT,
 } from "../controllers/plan.controller.js";
@@ -13,7 +14,8 @@ router.use(guard);
 
 // Plans Routes
 router.post("/", createPlan);
-router.get("/", getAllPlans);
+router.get("/", getMyPlans);
+router.get("/all", allowedTo("MANAGER"), getAllPlans);
 router.get("/mgmt", allowedTo("SUPERVISOR"), getPlansMGMT);
 router.get("/:id", getOnePlan);
 

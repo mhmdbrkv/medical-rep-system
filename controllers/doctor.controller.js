@@ -3,13 +3,36 @@ import { ApiError } from "../utils/apiError.js";
 
 // Add new doctor
 const addNewDoctor = async (req, res, next) => {
-  for (const doctor of req.body) {
-    doctor.accountName = String(doctor.accountName).trim();
-    doctor.phone = String(doctor.phone);
+  if (!req.body) {
+    return next(new ApiError("Please provide doctor data", 400));
   }
 
+  let {
+    nameAR,
+    nameEN,
+    email,
+    accountName,
+    phone,
+    grade,
+    avgPatientsPerDay,
+    specialty,
+    LicenseNumber,
+    subRegion,
+  } = req.body;
+
+  nameAR = String(nameAR).trim();
+  nameEN = String(nameEN).trim();
+  email = String(email).trim();
+  accountName = String(accountName).trim();
+  phone = String(phone);
+  grade = String(grade).trim();
+  avgPatientsPerDay = Number(avgPatientsPerDay);
+  specialty = String(specialty).trim();
+  LicenseNumber = String(LicenseNumber).trim();
+  subRegion = String(subRegion).trim();
+
   // Add doctor
-  const newDoctor = await prisma.doctor.createMany({
+  const newDoctor = await prisma.doctor.create({
     data: req.body,
   });
 

@@ -10,10 +10,9 @@ const createPlan = async (req, res, next) => {
     description,
     startDate,
     endDate,
-    doctors,
     objectives,
-    targetDoctors,
     targetVisits,
+    doctorsWithDates,
   } = req.body;
 
   let repId = null;
@@ -25,7 +24,7 @@ const createPlan = async (req, res, next) => {
     repId = req.body.repId;
   }
 
-  const doctorConnections = doctors.map((id) => ({ id }));
+  const doctorConnections = doctorsWithDates.map((item) => item.doctorId);
 
   const data = await prisma.plan.create({
     data: {
@@ -35,12 +34,13 @@ const createPlan = async (req, res, next) => {
       description,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
-      doctors: { connect: doctorConnections },
+      doctors: { connect: doctorConnections.map((id) => ({ id })) },
       objectives,
       createdBy: { connect: { id: req.user.id } },
       rep: { connect: { id: repId } },
       targetDoctors: doctorConnections.length,
       targetVisits,
+      doctorsWithDates,
     },
   });
   res.status(201).json({
@@ -50,14 +50,77 @@ const createPlan = async (req, res, next) => {
   });
 };
 
-const getAllPlans = async (req, res) => {
+const getMyPlans = async (req, res) => {
   const data = await prisma.plan.findMany({
     where: { createdBy: { id: req.user.id } },
     include: {
-      doctors: { select: { id: true, nameAR: true, nameEN: true } },
+      doctors: {
+        select: {
+          id: true,
+          nameAR: true,
+          nameEN: true,
+          accountName: true,
+          subRegion: true,
+          area: true,
+        },
+      },
       createdBy: { select: { id: true, name: true } },
     },
   });
+
+  data.forEach((plan) => {
+    plan.doctors = plan.doctors.map((doctor) => {
+      const doctorDate = plan.doctorsWithDates.find(
+        (d) => d.doctorId === doctor.id,
+      );
+
+      return {
+        ...doctor,
+        visitDate: doctorDate ? doctorDate.visitDate : null,
+      };
+    });
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "Data fetched successfully",
+    data: {
+      results: data.length,
+      data,
+    },
+  });
+};
+
+const getAllPlans = async (req, res) => {
+  const data = await prisma.plan.findMany({
+    include: {
+      doctors: {
+        select: {
+          id: true,
+          nameAR: true,
+          nameEN: true,
+          accountName: true,
+          subRegion: true,
+          area: true,
+        },
+      },
+      createdBy: { select: { id: true, name: true } },
+    },
+  });
+
+  data.forEach((plan) => {
+    plan.doctors = plan.doctors.map((doctor) => {
+      const doctorDate = plan.doctorsWithDates.find(
+        (d) => d.doctorId === doctor.id,
+      );
+
+      return {
+        ...doctor,
+        visitDate: doctorDate ? doctorDate.visitDate : null,
+      };
+    });
+  });
+
   res.status(200).json({
     status: "success",
     message: "Data fetched successfully",
@@ -74,16 +137,38 @@ const getOnePlan = async (req, res, next) => {
     const data = await prisma.plan.findUnique({
       where: { id },
       include: {
-        doctors: { select: { id: true, name: true } },
+        doctors: {
+          select: {
+            id: true,
+            nameAR: true,
+            nameEN: true,
+            accountName: true,
+            subRegion: true,
+            area: true,
+          },
+        },
         createdBy: { select: { id: true, name: true } },
       },
     });
+
+    data.doctors = data.doctors.map((doctor) => {
+      const doctorDate = data.doctorsWithDates.find(
+        (d) => d.doctorId === doctor.id,
+      );
+
+      return {
+        ...doctor,
+        visitDate: doctorDate ? doctorDate.visitDate : null,
+      };
+    });
+
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
       data: data,
     });
   } catch (error) {
+    console.error(error);
     next(new ApiError("Plan not found", 404));
   }
 };
@@ -130,4 +215,4 @@ const getPlansMGMT = async (req, res, next) => {
   }
 };
 
-export { createPlan, getAllPlans, getOnePlan, getPlansMGMT };
+export { createPlan, getAllPlans, getMyPlans, getOnePlan, getPlansMGMT };
