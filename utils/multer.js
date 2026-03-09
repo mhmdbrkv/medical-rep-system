@@ -21,10 +21,19 @@ const imageUpload = multer({
 
 const filesUpload = multer({
   storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["application/pdf"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new ApiError("Only PDF files are allowed!", 422), false);
+    }
+  },
   limits: { fileSize: 5 * 1024 * 1024 },
 }).fields([
   { name: "resume", maxCount: 1 },
   { name: "certificates", maxCount: 10 },
+  { name: "pdfs", maxCount: 10 },
 ]);
 
 const sheetUpload = multer({
