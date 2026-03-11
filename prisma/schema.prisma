@@ -167,6 +167,7 @@ model Request {
   visitedCity        String?
   visitDaysCount     Int?
   totalExpenseAmount Float?
+  totalExpenseData   Json[]
 
   pdfs Json[]
 

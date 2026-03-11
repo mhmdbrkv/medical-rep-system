@@ -42,6 +42,7 @@ const createRequest = async (req, res, next) => {
       visitedCity,
       visitDaysCount,
       totalExpenseAmount,
+      totalExpenseData,
     } = req.body;
 
     // Validate common required fields
@@ -146,7 +147,13 @@ const createRequest = async (req, res, next) => {
         return next(new ApiError("Please upload a file", 400));
       }
 
-      if (!visitedCity || !visitDaysCount || !totalExpenseAmount) {
+      if (
+        !visitedCity ||
+        !visitDaysCount ||
+        !totalExpenseAmount ||
+        !totalExpenseData ||
+        !Array.isArray(totalExpenseData)
+      ) {
         return next(new ApiError("Personal expense data is required", 400));
       }
 
@@ -192,6 +199,7 @@ const createRequest = async (req, res, next) => {
         totalExpenseAmount:
           type === "PERSONAL_EXPENSE" ? Number(totalExpenseAmount) : null,
         pdfs: pdfs?.length ? { set: pdfs } : [],
+        totalExpenseData: type === "PERSONAL_EXPENSE" ? totalExpenseData : null,
       },
     });
 
