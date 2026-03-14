@@ -154,7 +154,7 @@ const createRequest = async (req, res, next) => {
         !totalExpenseData ||
         !Array.isArray(totalExpenseData)
       ) {
-        return next(new ApiError("Personal expense data is required", 400));
+        return next(new ApiError("Total expense data is required", 400));
       }
 
       // upload pdf to cloudinary
