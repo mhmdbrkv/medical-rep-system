@@ -184,7 +184,7 @@ const createRequest = async (req, res, next) => {
         subject,
         type,
         urgency,
-        userId: req.user.id,
+        user: { connect: { id: req.user.id } },
         leaveStartDate: type === "LEAVE" ? new Date(leaveStartDate) : null,
         leaveEndDate: type === "LEAVE" ? new Date(leaveEndDate) : null,
         leaveDaysCount: type === "LEAVE" ? Number(leaveDaysCount) : null,
@@ -199,7 +199,7 @@ const createRequest = async (req, res, next) => {
         totalExpenseAmount:
           type === "PERSONAL_EXPENSE" ? Number(totalExpenseAmount) : null,
         pdfs: pdfs?.length ? { set: pdfs } : [],
-        totalExpenseData: type === "PERSONAL_EXPENSE" ? totalExpenseData : null,
+        totalExpenseData: type === "PERSONAL_EXPENSE" ? totalExpenseData : [],
       },
     });
 
