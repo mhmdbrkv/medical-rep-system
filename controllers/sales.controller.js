@@ -9,6 +9,18 @@ const addSale = async (req, res, next) => {
       return next(new ApiError("Please upload a file", 400));
     }
 
+    const existingSales = await prisma.sales.findFirst({
+      where: {
+        sheetName: `${req.body.sheetName}`.trim(),
+      },
+    });
+
+    if (existingSales) {
+      return next(
+        new ApiError("Sales already exist with the same sheet name", 400),
+      );
+    }
+
     const workbook = xlsx.readFile(req.file.path, { cellDates: true });
 
     // Get first sheet
@@ -20,6 +32,7 @@ const addSale = async (req, res, next) => {
 
     // Optional: normalize keys
     const data = rawData.map((row) => ({
+      sheetName: `${req.body.sheetName}`.trim(),
       customer: row["Customer"],
       order: row["Order"],
       orderDate: row["Order Date"],
@@ -39,6 +52,7 @@ const addSale = async (req, res, next) => {
           `[${p.internalRef}] ${p.name}`.trim() === sale.productVariant?.trim(),
       );
       return {
+        sheetName: sale.sheetName,
         customer: sale.customer,
         order: sale.order,
         orderDate: sale.orderDate,

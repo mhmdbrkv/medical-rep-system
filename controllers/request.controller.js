@@ -9,8 +9,10 @@ const getMyRequests = async (req, res, next) => {
       where: { userId: req.user.id },
       include: {
         user: { select: { id: true, name: true } },
+        doctors: { select: { id: true, nameAR: true, nameEN: true } },
       },
     });
+
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
@@ -36,7 +38,7 @@ const createRequest = async (req, res, next) => {
       leaveStartDate,
       leaveEndDate,
       leaveType,
-      productIds,
+      sampleData,
       doctorIds,
       budget,
       visitedCity,
@@ -51,7 +53,6 @@ const createRequest = async (req, res, next) => {
     }
 
     let leaveDaysCount = null;
-    let resolvedProductIds = [];
     let resolvedDoctorIds = [];
     let pdfs = [];
 
@@ -131,13 +132,12 @@ const createRequest = async (req, res, next) => {
       });
     } else if (type === "SAMPLE") {
       if (
-        !productIds ||
-        !Array.isArray(productIds) ||
-        productIds.length === 0
+        !sampleData ||
+        !Array.isArray(sampleData) ||
+        sampleData.length === 0
       ) {
         return next(new ApiError("At least one product is required", 400));
       }
-      resolvedProductIds = productIds;
     } else if (type === "PERSONAL_EXPENSE") {
       if (
         !req.files ||
@@ -191,7 +191,7 @@ const createRequest = async (req, res, next) => {
         leaveType: type === "LEAVE" ? leaveType : null,
         budget:
           type === "EXPENSE" || type === "MARKETING" ? Number(budget) : null,
-        products: { connect: resolvedProductIds.map((id) => ({ id })) },
+        sampleData: type === "SAMPLE" ? sampleData : [],
         doctors: { connect: resolvedDoctorIds.map((id) => ({ id })) },
         visitDaysCount:
           type === "PERSONAL_EXPENSE" ? Number(visitDaysCount) : null,

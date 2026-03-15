@@ -168,17 +168,19 @@ model Request {
   visitDaysCount     Int?
   totalExpenseAmount Float?
   totalExpenseData   Json[]
+  sampleData         Json[]
 
   pdfs Json[]
 
-  budget   Float?
-  products Products[]
-  doctors  Doctor[]
+  budget  Float?
+  doctors Doctor[]
 
   user User @relation(fields: [userId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  products   Products? @relation(fields: [productsId], references: [id])
+  productsId String?
 }
 
 enum RequestType {
@@ -367,6 +369,7 @@ model Pharmacy {
 }
 
 model Sales {
+  sheetName    String
   id           String   @id @default(uuid())
   customer     String
   order        String

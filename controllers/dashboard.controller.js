@@ -2,6 +2,52 @@ import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { startOfDay, endOfDay } from "date-fns";
 
+// get all sales in dashboard for manager
+const getAllSales = async (req, res, next) => {
+  try {
+    const { date } = req.query;
+
+    // Build the where clause conditionally
+    let whereClause = {};
+
+    if (date) {
+      const parsedDate = new Date(date);
+
+      if (isNaN(parsedDate.getTime())) {
+        return next(new ApiError("Invalid date format provided", 400));
+      }
+
+      // Match the full day by using a range instead of exact equality
+      const startOfDay = new Date(parsedDate);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(parsedDate);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      whereClause = {
+        orderDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      };
+    }
+
+    const sales = await prisma.sales.findMany({
+      where: whereClause,
+      include: { product: true },
+    });
+
+    res.status(200).json({
+      status: "success",
+      length: sales.length,
+      data: { sales },
+    });
+  } catch (error) {
+    console.error(error);
+    next(new ApiError("Error fetching all sales dashboard data", 500));
+  }
+};
+
 // Get Reps Dashboard
 const getRepsDashboard = async (req, res, next) => {
   try {
@@ -201,4 +247,74 @@ const getManagersDashboard = async (req, res, next) => {
   }
 };
 
-export { getRepsDashboard, getManagersDashboard };
+// get rep sales in dashboard
+const getRepsSales = async (req, res, next) => {
+  try {
+    const { date } = req.query;
+
+    // Build the where clause conditionally
+    let whereClause = {};
+
+    if (date) {
+      const parsedDate = new Date(date);
+
+      if (isNaN(parsedDate.getTime())) {
+        return next(new ApiError("Invalid date format provided", 400));
+      }
+
+      // Match the full day by using a range instead of exact equality
+      const startOfDay = new Date(parsedDate);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(parsedDate);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      whereClause = {
+        orderDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      };
+    }
+
+    // 1. Get Rep and SubRegion
+    const rep = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { subRegion: true },
+    });
+
+    if (!rep) return res.status(404).json({ message: "Rep not found" });
+
+    const userSubRegion = rep.subRegion?.name;
+
+    const pharmacyNames = await prisma.pharmacy.findMany({
+      where: { subRegion: userSubRegion },
+      select: { name: true },
+    });
+
+    const namesArray = pharmacyNames.map((p) => p.name);
+
+    const sales = await prisma.sales.findMany({
+      where: {
+        ...whereClause,
+        customer: { in: namesArray },
+      },
+      include: {
+        product: true,
+      },
+    });
+
+    res.status(200).json({
+      status: "success",
+      length: sales.length,
+      data: {
+        sales,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    next(new ApiError("Error fetching sales dashboard data", 500));
+  }
+};
+
+export { getAllSales, getRepsDashboard, getManagersDashboard, getRepsSales };
