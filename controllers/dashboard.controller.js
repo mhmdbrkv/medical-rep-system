@@ -51,13 +51,18 @@ const getAllSales = async (req, res, next) => {
 // Get Reps Dashboard
 const getRepsDashboard = async (req, res, next) => {
   try {
+    const clientDate = req.query.date ? new Date(req.query.date) : new Date();
     const userId = req.user.id;
     const now = new Date();
 
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
-    const endOfToday = new Date(new Date().setHours(23, 59, 59, 999));
+
+    const startOfToday = new Date(clientDate);
+    const endOfToday = new Date(clientDate);
+
+    startOfToday.setUTCHours(0, 0, 0, 0);
+    endOfToday.setUTCHours(23, 59, 59, 999);
 
     // 1. Get Rep and SubRegion
     const rep = await prisma.user.findUnique({
