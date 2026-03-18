@@ -50,6 +50,7 @@ const getAllForecasts = async (req, res, next) => {
   try {
     const forecasts = await prisma.forecast.findMany({
       include: { rep: { select: { id: true, name: true, email: true } } },
+      orderBy: { createdAt: "desc" },
     });
 
     res.status(200).json({

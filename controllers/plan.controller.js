@@ -66,6 +66,7 @@ const getMyPlans = async (req, res) => {
       },
       createdBy: { select: { id: true, name: true } },
     },
+    orderBy: { createdAt: "desc" },
   });
 
   data.forEach((plan) => {
@@ -106,6 +107,7 @@ const getAllPlans = async (req, res) => {
       },
       createdBy: { select: { id: true, name: true } },
     },
+    orderBy: { createdAt: "desc" },
   });
 
   data.forEach((plan) => {
@@ -193,6 +195,7 @@ const getPlansMGMT = async (req, res, next) => {
         createdBy: { select: { id: true, name: true } },
         rep: { select: { id: true, name: true } },
       },
+      orderBy: { createdAt: "desc" },
     });
 
     let myPlans = plans.filter((plan) => plan.createdById === req.user.id);

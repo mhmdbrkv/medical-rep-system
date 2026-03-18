@@ -30,6 +30,7 @@ const getVisits = async (req, res) => {
       doctor: { select: { id: true, nameAR: true, nameEN: true } },
       createdBy: { select: { id: true, name: true } },
     },
+    orderBy: { createdAt: "desc" },
   });
   res.status(200).json({
     status: "success",
@@ -89,6 +90,7 @@ const getMyVisitReports = async (req, res) => {
         },
       },
     },
+    orderBy: { createdAt: "desc" },
   });
   res.status(200).json({
     status: "success",
@@ -111,6 +113,7 @@ const getAllVisitReports = async (req, res) => {
         },
       },
     },
+    orderBy: { createdAt: "desc" },
   });
   res.status(200).json({
     status: "success",

@@ -206,6 +206,7 @@ const getAllUsers = async (req, res) => {
       createdAt: true,
       updatedAt: true,
     },
+    orderBy: { createdAt: "desc" },
   });
 
   res.status(200).json({
@@ -401,6 +402,7 @@ const getTeamRequests = async (req, res, next) => {
       include: {
         user: { select: { id: true, name: true } },
       },
+      orderBy: { createdAt: "desc" },
     });
     res.status(200).json({
       status: "success",

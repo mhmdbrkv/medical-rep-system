@@ -96,6 +96,7 @@ const getAppraisals = async (req, res, next) => {
         },
         manager: { select: { id: true, name: true, email: true } },
       },
+      orderBy: { createdAt: "desc" },
     });
     res.status(200).json({
       success: true,

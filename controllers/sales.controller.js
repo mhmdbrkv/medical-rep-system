@@ -194,6 +194,7 @@ const getRepsSales = async (req, res, next) => {
       include: {
         product: true,
       },
+      orderBy: { orderDate: "desc" },
     });
 
     res.status(200).json({
@@ -269,6 +270,7 @@ const getRepsSalesByRepId = async (req, res, next) => {
       include: {
         product: true,
       },
+      orderBy: { orderDate: "desc" },
     });
 
     res.status(200).json({

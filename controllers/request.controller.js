@@ -11,6 +11,7 @@ const getMyRequests = async (req, res, next) => {
         user: { select: { id: true, name: true } },
         doctors: { select: { id: true, nameAR: true, nameEN: true } },
       },
+      orderBy: { createdAt: "desc" },
     });
 
     res.status(200).json({

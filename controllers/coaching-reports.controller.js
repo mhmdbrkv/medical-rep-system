@@ -145,6 +145,7 @@ const getMyCoachingReport = async (req, res, next) => {
           },
         },
       },
+      orderBy: { createdAt: "desc" },
     });
     res.status(200).json({
       status: "success",
@@ -201,6 +202,7 @@ const getAllCoachingReport = async (req, res, next) => {
           },
         },
       },
+      orderBy: { createdAt: "desc" },
     });
     res.status(200).json({
       status: "success",
@@ -260,6 +262,7 @@ const getRepCoachingReport = async (req, res, next) => {
           },
         },
       },
+      orderBy: { createdAt: "desc" },
     });
     res.status(200).json({
       status: "success",

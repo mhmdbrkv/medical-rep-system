@@ -4,7 +4,6 @@ import repRoutes from "./rep.route.js";
 import supervisorRoutes from "./supervisor.route.js";
 import managerRoutes from "./manager.route.js";
 import doctorRoutes from "./doctor.route.js";
-import accountRoutes from "./account.route.js";
 import visitRoutes from "./visit.route.js";
 import requestRoutes from "./request.route.js";
 import planRoutes from "./plan.route.js";
@@ -17,6 +16,7 @@ import productRoutes from "./product.route.js";
 import pharmacyRoutes from "./pharmacy.route.js";
 import saleRoutes from "./sale.route.js";
 import dashboardRoutes from "./dashboard.route.js";
+// import accountRoutes from "./account.route.js";
 
 export default (app) => {
   app.use("/api/auth", authRoutes);
@@ -25,7 +25,6 @@ export default (app) => {
   app.use("/api/supervisors", supervisorRoutes);
   app.use("/api/managers", managerRoutes);
   app.use("/api/doctors", doctorRoutes);
-  app.use("/api/accounts", accountRoutes);
   app.use("/api/visits", visitRoutes);
   app.use("/api/requests", requestRoutes);
   app.use("/api/plans", planRoutes);
@@ -38,4 +37,5 @@ export default (app) => {
   app.use("/api/pharmacies", pharmacyRoutes);
   app.use("/api/sales", saleRoutes);
   app.use("/api/dashboard", dashboardRoutes);
+  // app.use("/api/accounts", accountRoutes);
 };
