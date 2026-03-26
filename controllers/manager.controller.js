@@ -293,42 +293,48 @@ const getUserDetails = async (req, res, next) => {
 
 // Update one user by id
 const updateOneUserById = async (req, res, next) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-  const exists = await prisma.user.findUnique({
-    where: { id },
-  });
-  if (!exists) {
-    return next(new ApiError("User not found", 404));
-  }
-
-  if (req.body?.newPassword) {
-    if (await bcrypt.compare(req?.body?.newPassword, exists?.password)) {
-      return next(
-        new ApiError(
-          "New password cannot be the same as the current password",
-          400,
-        ),
-      );
+    const exists = await prisma.user.findUnique({
+      where: { id },
+    });
+    if (!exists) {
+      return next(new ApiError("User not found", 404));
     }
 
-    const hashedPassword = await bcrypt.hash(req.body?.newPassword, 10);
-    req.body.password = hashedPassword;
+    if (req.body?.newPassword) {
+      if (await bcrypt.compare(req?.body?.newPassword, exists?.password)) {
+        return next(
+          new ApiError(
+            "New password cannot be the same as the current password",
+            400,
+          ),
+        );
+      }
+
+      const hashedPassword = await bcrypt.hash(req.body?.newPassword, 10);
+      req.body.password = hashedPassword;
+      delete req.body.newPassword;
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: req.body,
+    });
+
+    let userData = { ...user };
+    delete userData.password;
+
+    res.status(200).json({
+      status: "success",
+      message: "User updated successfully",
+      data: userData,
+    });
+  } catch (error) {
+    console.error(error);
+    next(new ApiError(`Update User Error`, 500));
   }
-
-  const user = await prisma.user.update({
-    where: { id },
-    data: req.body,
-  });
-
-  let userData = { ...user };
-  delete userData.password;
-
-  res.status(200).json({
-    status: "success",
-    message: "User updated successfully",
-    data: userData,
-  });
 };
 
 // Delete one user by id
