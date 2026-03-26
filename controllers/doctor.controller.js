@@ -45,7 +45,12 @@ const addNewDoctor = async (req, res, next) => {
 
 // Get all doctors
 const getAllDoctors = async (req, res) => {
-  const doctors = await prisma.doctor.findMany({});
+  let filter = {};
+  const { subRegion } = req.query;
+
+  if (subRegion) filter.subRegion = subRegion;
+
+  const doctors = await prisma.doctor.findMany({ where: { ...filter } });
   res.status(200).json({
     status: "success",
     message: "Doctors fetched successfully",
