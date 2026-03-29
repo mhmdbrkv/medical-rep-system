@@ -218,4 +218,23 @@ const getPlansMGMT = async (req, res, next) => {
   }
 };
 
-export { createPlan, getAllPlans, getMyPlans, getOnePlan, getPlansMGMT };
+const updateOnePlan = async (req, res, next) => {
+  const { id } = req.params;
+
+  const data = await prisma.plan.update({
+    where: { id },
+    data: req.body,
+  });
+  res
+    .status(200)
+    .json({ status: "success", message: "Plan updated successfully", data });
+};
+
+export {
+  createPlan,
+  getAllPlans,
+  getMyPlans,
+  getOnePlan,
+  getPlansMGMT,
+  updateOnePlan,
+};
