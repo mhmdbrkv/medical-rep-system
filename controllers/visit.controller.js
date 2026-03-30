@@ -42,6 +42,39 @@ const getVisits = async (req, res) => {
   });
 };
 
+const getAllVisits = async (req, res) => {
+  const clientDate = req.query.date ? new Date(req.query.date) : null;
+
+  if (clientDate && isNaN(clientDate.getTime())) {
+    throw new ApiError("Invalid date format provided", 400);
+  }
+
+  const startOfToday = new Date(clientDate);
+  const endOfToday = new Date(clientDate);
+
+  startOfToday.setUTCHours(0, 0, 0, 0);
+  endOfToday.setUTCHours(23, 59, 59, 999);
+
+  const data = await prisma.visit.findMany({
+    where: {
+      date: clientDate ? { gte: startOfToday, lte: endOfToday } : undefined,
+    },
+    include: {
+      doctor: { select: { id: true, nameAR: true, nameEN: true } },
+      createdBy: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  res.status(200).json({
+    status: "success",
+    message: "Data fetched successfully",
+    data: {
+      results: data.length,
+      data,
+    },
+  });
+};
+
 const addVisitReports = async (req, res) => {
   const {
     visitId,
@@ -125,10 +158,27 @@ const getAllVisitReports = async (req, res) => {
   });
 };
 
+const updateVisit = async (req, res, next) => {
+  const { id } = req.params;
+
+  const data = await prisma.visit.update({
+    where: { id },
+    data: req.body,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "Data updated successfully",
+    data: data,
+  });
+};
+
 export {
   scheduleVisit,
   getVisits,
   addVisitReports,
   getMyVisitReports,
   getAllVisitReports,
+  updateVisit,
+  getAllVisits,
 };
