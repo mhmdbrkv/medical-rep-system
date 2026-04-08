@@ -60,6 +60,7 @@ const getRepsDashboard = async (req, res, next) => {
           doctor: { select: { id: true, nameAR: true, nameEN: true } },
           createdBy: { select: { id: true, name: true } },
         },
+        orderBy: { date: "desc" },
       }),
       // Get only the names of pharmacies in this subregion
       prisma.pharmacy.findMany({
