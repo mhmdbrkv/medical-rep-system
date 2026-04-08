@@ -23,23 +23,61 @@ const scheduleVisit = async (req, res) => {
   });
 };
 
-const getVisits = async (req, res) => {
-  const data = await prisma.visit.findMany({
-    where: { userId: req.user.id },
-    include: {
-      doctor: { select: { id: true, nameAR: true, nameEN: true } },
-      createdBy: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  res.status(200).json({
-    status: "success",
-    message: "Data fetched successfully",
-    data: {
-      results: data.length,
-      data,
-    },
-  });
+const getVisits = async (req, res, next) => {
+  try {
+    let dateFilter = undefined;
+
+    if (req.query.date) {
+      const clientDate = new Date(req.query.date);
+
+      // 1. Check for Invalid Date
+      if (isNaN(clientDate.getTime())) {
+        return res.status(400).json({
+          status: "fail",
+          message: "Invalid date format provided.",
+        });
+      }
+
+      // 2. Safely calculate month start/end using UTC to avoid server timezone bugs
+      // We use `Date.UTC` to get the Exact 1st of the required month in UTC
+      const startOfTheMonth = new Date(
+        Date.UTC(clientDate.getUTCFullYear(), clientDate.getUTCMonth(), 1),
+      );
+
+      // The 1st day of the NEXT month. We'll use `lt` (less than) in Prisma for this.
+      const endOfTheMonth = new Date(
+        Date.UTC(clientDate.getUTCFullYear(), clientDate.getUTCMonth() + 1, 1),
+      );
+
+      dateFilter = { gte: startOfTheMonth, lt: endOfTheMonth };
+    }
+
+    const data = await prisma.visit.findMany({
+      where: {
+        userId: req.user.id,
+        date: dateFilter, // Pass the safely computed bounds or undefined
+      },
+      include: {
+        doctor: { select: { id: true, nameAR: true, nameEN: true } },
+        createdBy: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      // Optional: Best practice to paginate!
+      // take: 50,
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Data fetched successfully",
+      data: {
+        results: data.length,
+        data,
+      },
+    });
+  } catch (error) {
+    // Route the error to your global error middleware
+    next(error);
+  }
 };
 
 const getAllVisits = async (req, res) => {
