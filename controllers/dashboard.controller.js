@@ -56,6 +56,10 @@ const getRepsDashboard = async (req, res, next) => {
       prisma.request.findMany({ where: { userId, status: "PENDING" } }),
       prisma.visit.findMany({
         where: { userId: userId, date: { gte: startOfToday, lte: endOfToday } },
+        include: {
+          doctor: { select: { id: true, nameAR: true, nameEN: true } },
+          createdBy: { select: { id: true, name: true } },
+        },
       }),
       // Get only the names of pharmacies in this subregion
       prisma.pharmacy.findMany({
@@ -63,6 +67,8 @@ const getRepsDashboard = async (req, res, next) => {
         select: { name: true },
       }),
     ]);
+
+    console.log("here");
 
     // 3. Optimized Sales Aggregation (Database-level)
     const namesArray = pharmacyNames.map((p) => p.name);
