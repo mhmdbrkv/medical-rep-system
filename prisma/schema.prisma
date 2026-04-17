@@ -47,7 +47,6 @@ model User {
   regions             Region[]
   visitReports        VisitReport[]
   plans               Plan[]           @relation("planCreatedBy")
-  repPlans            Plan[]           @relation("planToRep")
   users               User[]           @relation("manager")
   coachings           CoachingReport[] @relation("CoachingCreatedBy")
   repCoachings        CoachingReport[] @relation("repCoaching")
@@ -70,17 +69,14 @@ model Plan {
   description        String
   startDate          DateTime
   endDate            DateTime
-  doctors            Doctor[]
-  doctorsWithDates   Json[]
+  doctors            Json[]
   targetDoctors      Int
   targetVisits       Int
   objectives         String[]
   supervisorFeedback String?
 
   createdBy   User   @relation("planCreatedBy", fields: [createdById], references: [id])
-  rep         User   @relation("planToRep", fields: [repId], references: [id])
   createdById String
-  repId       String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -249,7 +245,6 @@ model Doctor {
 
   visits    Visit[]
   coachings CoachingReport[]
-  plan      Plan?            @relation(fields: [planId], references: [id])
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

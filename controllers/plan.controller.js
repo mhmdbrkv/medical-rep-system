@@ -15,16 +15,25 @@ const createPlan = async (req, res, next) => {
     doctorsWithDates,
   } = req.body;
 
-  let repId = null;
+  const doctorIds = doctorsWithDates.map((d) => d.doctorId);
 
-  if (req.user?.role === "MEDICAL_REP") {
-    repId = req.user.id;
-  } else {
-    if (!req.body.repId) return next(new ApiError("Rep id is required", 400));
-    repId = req.body.repId;
-  }
+  const doctorsInDB = await prisma.doctor.findMany({
+    where: { id: { in: doctorIds } },
+    select: {
+      id: true,
+      nameAR: true,
+      nameEN: true,
+      accountName: true,
+      subRegion: true,
+    },
+  });
 
-  const doctorConnections = doctorsWithDates.map((item) => item.doctorId);
+  let doctors = doctorsInDB.map((doctor) => ({
+    ...doctor,
+    visitDate: doctorsWithDates.find((d) => d.doctorId === doctor.id)
+      ? doctorsWithDates.find((d) => d.doctorId === doctor.id).visitDate
+      : null,
+  }));
 
   const data = await prisma.plan.create({
     data: {
@@ -34,13 +43,11 @@ const createPlan = async (req, res, next) => {
       description,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
-      doctors: { connect: doctorConnections.map((id) => ({ id })) },
+      doctors: doctors,
       objectives,
       createdBy: { connect: { id: req.user.id } },
-      rep: { connect: { id: repId } },
-      targetDoctors: doctorConnections.length,
+      targetDoctors: doctorsWithDates.length,
       targetVisits,
-      doctorsWithDates,
     },
   });
   res.status(201).json({
@@ -54,16 +61,6 @@ const getMyPlans = async (req, res) => {
   const data = await prisma.plan.findMany({
     where: { createdBy: { id: req.user.id } },
     include: {
-      doctors: {
-        select: {
-          id: true,
-          nameAR: true,
-          nameEN: true,
-          accountName: true,
-          subRegion: true,
-          area: true,
-        },
-      },
       createdBy: { select: { id: true, name: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -95,32 +92,9 @@ const getMyPlans = async (req, res) => {
 const getAllPlans = async (req, res) => {
   const data = await prisma.plan.findMany({
     include: {
-      doctors: {
-        select: {
-          id: true,
-          nameAR: true,
-          nameEN: true,
-          accountName: true,
-          subRegion: true,
-          area: true,
-        },
-      },
       createdBy: { select: { id: true, name: true } },
     },
     orderBy: { createdAt: "desc" },
-  });
-
-  data.forEach((plan) => {
-    plan.doctors = plan.doctors.map((doctor) => {
-      const doctorDate = plan.doctorsWithDates.find(
-        (d) => d.doctorId === doctor.id,
-      );
-
-      return {
-        ...doctor,
-        visitDate: doctorDate ? doctorDate.visitDate : null,
-      };
-    });
   });
 
   res.status(200).json({
@@ -139,16 +113,6 @@ const getOnePlan = async (req, res, next) => {
     const data = await prisma.plan.findUnique({
       where: { id },
       include: {
-        doctors: {
-          select: {
-            id: true,
-            nameAR: true,
-            nameEN: true,
-            accountName: true,
-            subRegion: true,
-            area: true,
-          },
-        },
         createdBy: { select: { id: true, name: true } },
       },
     });
@@ -191,16 +155,14 @@ const getPlansMGMT = async (req, res, next) => {
         status: "PENDING",
       },
       include: {
-        doctors: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
-        rep: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: "desc" },
     });
 
     let myPlans = plans.filter((plan) => plan.createdById === req.user.id);
-    let repPlans = plans.filter((plan) => teamIds.includes(plan.repId));
-    let teamMembers = repPlans.map((plan) => [...new Set(plan.rep.name)]);
+    let repPlans = plans.filter((plan) => teamIds.includes(plan.createdById));
+    let teamMembers = repPlans.map((plan) => [...new Set(plan.createdBy.name)]);
 
     res.status(200).json({
       status: "success",

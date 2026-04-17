@@ -193,7 +193,6 @@ const getAllUsers = async (req, res) => {
 
       visitReports: true,
       plans: true,
-      repPlans: true,
       users: true,
 
       coachings: true,
