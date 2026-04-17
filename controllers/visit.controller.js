@@ -58,7 +58,9 @@ const getVisits = async (req, res, next) => {
         date: dateFilter, // Pass the safely computed bounds or undefined
       },
       include: {
-        doctor: { select: { id: true, nameAR: true, nameEN: true } },
+        doctor: {
+          select: { id: true, nameAR: true, nameEN: true, accountName: true },
+        },
         createdBy: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -98,7 +100,9 @@ const getAllVisits = async (req, res) => {
       date: clientDate ? { gte: startOfToday, lte: endOfToday } : undefined,
     },
     include: {
-      doctor: { select: { id: true, nameAR: true, nameEN: true } },
+      doctor: {
+        select: { id: true, nameAR: true, nameEN: true, accountName: true },
+      },
       createdBy: { select: { id: true, name: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -157,7 +161,10 @@ const getMyVisitReports = async (req, res) => {
         select: {
           id: true,
           date: true,
-          doctor: { select: { id: true, nameAR: true, nameEN: true } },
+          doctor: {
+            select: { id: true, nameAR: true, nameEN: true, accountName: true },
+          },
+          createdBy: { select: { id: true, name: true } },
         },
       },
     },
@@ -180,7 +187,10 @@ const getAllVisitReports = async (req, res) => {
         select: {
           id: true,
           date: true,
-          doctor: { select: { id: true, nameAR: true, nameEN: true } },
+          doctor: {
+            select: { id: true, nameAR: true, nameEN: true, accountName: true },
+          },
+          createdBy: { select: { id: true, name: true } },
         },
       },
     },
