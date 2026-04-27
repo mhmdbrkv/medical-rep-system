@@ -66,19 +66,6 @@ const getMyPlans = async (req, res) => {
     orderBy: { createdAt: "desc" },
   });
 
-  data.forEach((plan) => {
-    plan.doctors = plan.doctors.map((doctor) => {
-      const doctorDate = plan.doctorsWithDates.find(
-        (d) => d.doctorId === doctor.id,
-      );
-
-      return {
-        ...doctor,
-        visitDate: doctorDate ? doctorDate.visitDate : null,
-      };
-    });
-  });
-
   res.status(200).json({
     status: "success",
     message: "Data fetched successfully",

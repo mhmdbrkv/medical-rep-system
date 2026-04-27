@@ -41,7 +41,7 @@ const getRepsDashboard = async (req, res, next) => {
       prisma.pharmacy.count({ where: { subRegion: userSubRegion } }),
       prisma.plan.findMany({
         where: {
-          repId: userId,
+          createdById: userId,
           status: "APPROVED",
           startDate: { gte: startOfMonth, lte: endOfMonth },
         },
@@ -68,8 +68,6 @@ const getRepsDashboard = async (req, res, next) => {
         select: { name: true },
       }),
     ]);
-
-    console.log("here");
 
     // 3. Optimized Sales Aggregation (Database-level)
     const namesArray = pharmacyNames.map((p) => p.name);
