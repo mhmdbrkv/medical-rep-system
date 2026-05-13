@@ -92,7 +92,7 @@ const getAllVisits = async (req, res) => {
   }
 
   if (repId) {
-    where.createdBy = repId;
+    where.userId = repId;
   }
 
   if (clientDate) {
@@ -196,7 +196,7 @@ const getAllVisitReports = async (req, res) => {
   const { repId } = req.query || null;
   let where = {};
   if (repId) {
-    where.createdBy = repId;
+    where.userId = repId;
   }
 
   const data = await prisma.visitReport.findMany({
