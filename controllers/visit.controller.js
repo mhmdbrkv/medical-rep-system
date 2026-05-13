@@ -84,17 +84,15 @@ const getVisits = async (req, res, next) => {
 
 const getAllVisits = async (req, res) => {
   const clientDate = req.query.date ? new Date(req.query.date) : null;
-  const { repName } = req.query || null;
+  const { repId } = req.query || null;
   let where = {};
 
   if (clientDate && isNaN(clientDate.getTime())) {
     throw new ApiError("Invalid date format provided", 400);
   }
 
-  if (repName) {
-    where.createdBy = {
-      name: { contains: repName },
-    };
+  if (repId) {
+    where.createdById = repId;
   }
 
   if (clientDate) {
@@ -194,13 +192,11 @@ const getMyVisitReports = async (req, res) => {
 };
 
 const getAllVisitReports = async (req, res) => {
-  // filter by rep name
-  const { repName } = req.query || null;
+  // filter by rep id
+  const { repId } = req.query || null;
   let where = {};
-  if (repName) {
-    where.createdBy = {
-      name: { contains: repName },
-    };
+  if (repId) {
+    where.createdById = repId;
   }
 
   const data = await prisma.visitReport.findMany({
