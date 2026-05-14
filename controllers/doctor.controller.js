@@ -126,10 +126,62 @@ const deleteDoctor = async (req, res, next) => {
     .json({ status: "success", message: "Doctor deleted successfully" });
 };
 
+// add doctor by CSV file
+const addDoctorByCSV = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return next(new ApiError("Please upload a file", 400));
+    }
+
+    const workbook = xlsx.readFile(req.file.path, { cellDates: true });
+
+    // Get first sheet
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+
+    // Convert to JSON
+    const rawData = xlsx.utils.sheet_to_json(sheet);
+
+    // Optional: normalize keys
+    const data = rawData.map((row) => ({
+      nameAR: row["Name (Arabic)"],
+      nameEN: row["Name (English)"],
+      email: row["Email"],
+      phone: row["Phone"],
+      grade: row["Grade"],
+      avgPatientsPerDay: row["Avg Patients per Day"],
+      specialty: row["Specialty"],
+      licenseNumber: row["License Number"],
+      subRegion: row["Sub Region"],
+      accountName: row["Account Name"],
+      area: row["Area"],
+    }));
+
+    const doctor = await prisma.doctor.createMany({
+      data,
+    });
+
+    // Optional: delete the uploaded file after processing
+    await fs.unlink(req.file.path).catch((err) => {
+      console.error("Failed to delete file:", err);
+    });
+
+    res.status(201).json({
+      status: "success",
+      message: "Data created successfully",
+      data: doctor,
+    });
+  } catch (error) {
+    console.error(error);
+    next(new ApiError("Failed to create doctor", 500));
+  }
+};
+
 export {
   addNewDoctor,
   getAllDoctors,
   getOneDoctor,
   updateDoctor,
   deleteDoctor,
+  addDoctorByCSV,
 };

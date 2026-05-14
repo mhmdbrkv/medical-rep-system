@@ -57,7 +57,7 @@ const sheetUpload = multer({
       cb(new ApiError("Only Excel files are allowed!", 422), false);
     }
   },
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
 }).single("sheet");
 
 export { imageUpload, filesUpload, sheetUpload };

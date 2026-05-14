@@ -80,6 +80,7 @@ model Plan {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  visits    Visit[]
 }
 
 enum PlanStatus {
@@ -94,17 +95,20 @@ enum PlanType {
 }
 
 model Visit {
-  id        String      @id @default(uuid())
-  visitType VisitType   @default(ROUTINE)
+  id        String    @id @default(uuid())
+  visitType VisitType @default(ROUTINE)
   samples   String[]
   date      DateTime
-  time      String
-  doctor    Doctor      @relation(fields: [doctorId], references: [id])
+  time      String?
+  doctor    Doctor    @relation(fields: [doctorId], references: [id])
   doctorId  String
-  createdBy User        @relation(fields: [userId], references: [id])
+  createdBy User      @relation(fields: [userId], references: [id])
   userId    String
-  notes     String?
-  status    VisitStatus @default(SCHEDULED)
+
+  plan   Plan?       @relation(fields: [planId], references: [id])
+  planId String?
+  notes  String?
+  status VisitStatus @default(SCHEDULED)
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt

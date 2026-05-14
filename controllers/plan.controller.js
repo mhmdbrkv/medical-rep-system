@@ -104,17 +104,6 @@ const getOnePlan = async (req, res, next) => {
       },
     });
 
-    data.doctors = data.doctors.map((doctor) => {
-      const doctorDate = data.doctorsWithDates.find(
-        (d) => d.doctorId === doctor.id,
-      );
-
-      return {
-        ...doctor,
-        visitDate: doctorDate ? doctorDate.visitDate : null,
-      };
-    });
-
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
@@ -169,14 +158,40 @@ const getPlansMGMT = async (req, res, next) => {
 
 const updateOnePlan = async (req, res, next) => {
   const { id } = req.params;
+  const { status } = req.body;
 
-  const data = await prisma.plan.update({
+  const plan = await prisma.plan.findUnique({ where: { id } });
+  if (!plan) return next(new ApiError("Plan not found", 404));
+
+  let visitData;
+  if (status === "APPROVED" && plan.status !== "APPROVED") {
+    // create visit if the plan is approved
+    visitData = plan.doctors?.map((doctor) => {
+      return {
+        planId: id,
+        doctorId: doctor.id,
+        userId: plan.createdById,
+        date: new Date(doctor.visitDate),
+      };
+    });
+  }
+
+  const updatedPlan = await prisma.plan.update({
     where: { id },
-    data: req.body,
+    data: { status },
   });
-  res
-    .status(200)
-    .json({ status: "success", message: "Plan updated successfully", data });
+
+  if (visitData?.length > 0 && updatedPlan.status === "APPROVED") {
+    await prisma.visit.createMany({
+      data: visitData,
+    });
+  }
+
+  res.status(200).json({
+    status: "success",
+    message: "Plan updated successfully",
+    data: updatedPlan,
+  });
 };
 
 export {
