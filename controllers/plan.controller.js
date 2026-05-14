@@ -59,10 +59,7 @@ const createPlan = async (req, res, next) => {
 
 const getMyPlans = async (req, res) => {
   const data = await prisma.plan.findMany({
-    where: { createdBy: { id: req.user.id } },
-    include: {
-      createdBy: { select: { id: true, name: true } },
-    },
+    where: { createdById: req.user.id },
     orderBy: { createdAt: "desc" },
   });
 

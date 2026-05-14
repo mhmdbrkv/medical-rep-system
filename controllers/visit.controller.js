@@ -61,11 +61,8 @@ const getVisits = async (req, res, next) => {
         doctor: {
           select: { id: true, nameAR: true, nameEN: true, accountName: true },
         },
-        createdBy: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: "desc" },
-      // Optional: Best practice to paginate!
-      // take: 50,
     });
 
     res.status(200).json({
