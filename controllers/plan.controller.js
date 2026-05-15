@@ -1,5 +1,6 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
+import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 // Plans Controllers
 const createPlan = async (req, res, next) => {
@@ -57,40 +58,6 @@ const createPlan = async (req, res, next) => {
   });
 };
 
-const getMyPlans = async (req, res) => {
-  const data = await prisma.plan.findMany({
-    where: { createdById: req.user.id },
-    orderBy: { createdAt: "desc" },
-  });
-
-  res.status(200).json({
-    status: "success",
-    message: "Data fetched successfully",
-    data: {
-      results: data.length,
-      data,
-    },
-  });
-};
-
-const getAllPlans = async (req, res) => {
-  const data = await prisma.plan.findMany({
-    include: {
-      createdBy: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  res.status(200).json({
-    status: "success",
-    message: "Data fetched successfully",
-    data: {
-      results: data.length,
-      data,
-    },
-  });
-};
-
 const getOnePlan = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -112,34 +79,134 @@ const getOnePlan = async (req, res, next) => {
   }
 };
 
-const getPlansMGMT = async (req, res, next) => {
+const getMyPlans = async (req, res, next) => {
   try {
-    const teamIds = await prisma.user.findMany({
-      where: { supervisorId: req.user.id },
-      select: { id: true },
+    // Instantiate the ApiFeatures class and apply features
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    const whereClause = {
+      ...queryObj.where,
+      createdById: req.user.id,
+    };
+
+    // Get total count of documents for accurate pagination calculations
+    const totalDocuments = await prisma.plan.count({ where: whereClause });
+
+    const data = await prisma.plan.findMany({
+      where: whereClause,
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take, // Apply limit
+      skip: queryObj.skip, // Apply pagination skip
     });
 
-    const plans = await prisma.plan.findMany({
-      where: {
-        OR: [
-          { createdBy: { id: req.user.id } },
-          { in: teamIds.map((team) => team.id) },
-        ],
-        status: "PENDING",
-      },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    let myPlans = plans.filter((plan) => plan.createdById === req.user.id);
-    let repPlans = plans.filter((plan) => teamIds.includes(plan.createdById));
-    let teamMembers = repPlans.map((plan) => [...new Set(plan.createdBy.name)]);
+    const paginationData = paginationResults(pagination, totalDocuments);
 
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
+      results: totalDocuments,
+      pagination: paginationData,
+      data: data,
+    });
+  } catch (error) {
+    console.error(error);
+    next(new ApiError("Failed to fetch plans", 500));
+  }
+};
+
+const getAllPlans = async (req, res, next) => {
+  try {
+    // Instantiate the ApiFeatures class and apply features
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    const whereClause = {
+      ...queryObj.where,
+    };
+
+    if (req.query.createdById) {
+      whereClause.createdById = req.query.createdById;
+    }
+
+    // Get total count of documents for accurate pagination calculations
+    const totalDocuments = await prisma.plan.count({ where: whereClause });
+
+    const data = await prisma.plan.findMany({
+      where: whereClause,
+      include: {
+        createdBy: { select: { id: true, name: true } },
+      },
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take, // Apply limit
+      skip: queryObj.skip, // Apply pagination skip
+    });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
+    res.status(200).json({
+      status: "success",
+      message: "Data fetched successfully",
+      results: totalDocuments,
+      pagination: paginationData,
+      data: data,
+    });
+  } catch (error) {
+    console.error(error);
+    next(new ApiError("Failed to fetch plans", 500));
+  }
+};
+
+const getPlansMGMT = async (req, res, next) => {
+  try {
+    // Instantiate the ApiFeatures class and apply features
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+
+    let teamIds = [];
+
+    if (req.query?.createdById) {
+      teamIds.push(req.query.createdById);
+    } else {
+      const team = await prisma.user.findMany({
+        where: { supervisorId: req.user.id },
+        select: { id: true },
+      });
+      teamIds = team.map((team) => team.id);
+    }
+
+    let whereClause = {
+      ...queryObj.where,
+      OR: [
+        { createdBy: { id: req.user.id } },
+        { createdBy: { id: { in: teamIds } } },
+      ],
+      status: "PENDING",
+    };
+
+    const totalDocuments = await prisma.plan.count({ where: whereClause });
+
+    const plans = await prisma.plan.findMany({
+      where: whereClause,
+      include: {
+        createdBy: { select: { id: true, name: true } },
+      },
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take, // Apply limit
+      skip: queryObj.skip, // Apply pagination skip
+    });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
+    let myPlans = plans.filter((plan) => plan.createdById === req.user.id);
+    let repPlans = plans.filter((plan) => teamIds.includes(plan.createdById));
+    let teamMembers = repPlans.map((plan) => [
+      ...new Set(plan?.createdBy?.name),
+    ]);
+
+    res.status(200).json({
+      status: "success",
+      message: "Data fetched successfully",
+      results: totalDocuments,
+      pagination: paginationData,
       data: {
         teamMembers: teamMembers.length,
         pendingPlans: repPlans.length,

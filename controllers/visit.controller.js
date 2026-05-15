@@ -1,5 +1,6 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
+import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 // Visits and Visit Reports Controllers
 const scheduleVisit = async (req, res) => {
@@ -26,7 +27,6 @@ const scheduleVisit = async (req, res) => {
 const getVisits = async (req, res, next) => {
   try {
     let dateFilter = undefined;
-
     if (req.query.date) {
       const clientDate = new Date(req.query.date);
 
@@ -52,77 +52,113 @@ const getVisits = async (req, res, next) => {
       dateFilter = { gte: startOfTheMonth, lt: endOfTheMonth };
     }
 
+    // Instantiate the ApiFeatures class and apply features
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+
+    const whereClause = {
+      ...queryObj.where,
+      userId: req.user.id,
+      ...(dateFilter && { date: dateFilter }),
+    };
+
+    // Get total count of documents for accurate pagination calculations
+    const totalDocuments = await prisma.visit.count({
+      where: whereClause,
+    });
+
     const data = await prisma.visit.findMany({
-      where: {
-        userId: req.user.id,
-        date: dateFilter, // Pass the safely computed bounds or undefined
-      },
+      where: whereClause,
       include: {
         doctor: {
           select: { id: true, nameAR: true, nameEN: true, accountName: true },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take, // Apply limit
+      skip: queryObj.skip, // Apply pagination skip
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
 
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      data: {
-        results: data.length,
-        data,
-      },
+      results: totalDocuments,
+      pagination: paginationData,
+      data: data,
     });
   } catch (error) {
     // Route the error to your global error middleware
+    console.error(error);
     next(error);
   }
 };
 
-const getAllVisits = async (req, res) => {
-  const clientDate = req.query.date ? new Date(req.query.date) : null;
-  const { repId } = req.query || null;
-  let where = {};
+const getAllVisits = async (req, res, next) => {
+  try {
+    const clientDate = req.query.date ? new Date(req.query.date) : null;
+    const { createdById } = req.query || null;
 
-  if (clientDate && isNaN(clientDate.getTime())) {
-    throw new ApiError("Invalid date format provided", 400);
-  }
-
-  if (repId) {
-    where.userId = repId;
-  }
-
-  if (clientDate) {
-    where.date = {
-      gte: clientDate,
-      lte: clientDate,
+    // Instantiate the ApiFeatures class and apply features
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    const whereClause = {
+      ...queryObj.where,
     };
-  }
 
-  const startOfToday = new Date(clientDate);
-  const endOfToday = new Date(clientDate);
+    if (clientDate && isNaN(clientDate.getTime())) {
+      throw new ApiError("Invalid date format provided", 400);
+    }
 
-  startOfToday.setUTCHours(0, 0, 0, 0);
-  endOfToday.setUTCHours(23, 59, 59, 999);
+    if (createdById) {
+      whereClause.userId = createdById;
+      delete whereClause.createdById;
+    }
 
-  const data = await prisma.visit.findMany({
-    where,
-    include: {
-      doctor: {
-        select: { id: true, nameAR: true, nameEN: true, accountName: true },
+    if (clientDate) {
+      const startOfToday = new Date(clientDate);
+      const endOfToday = new Date(clientDate);
+
+      startOfToday.setUTCHours(0, 0, 0, 0);
+      endOfToday.setUTCHours(23, 59, 59, 999);
+
+      whereClause.date = {
+        gte: startOfToday,
+        lte: endOfToday,
+      };
+    }
+
+    // Get total count of documents for accurate pagination calculations
+    const totalDocuments = await prisma.visit.count({ where: whereClause });
+
+    const data = await prisma.visit.findMany({
+      where: whereClause,
+      include: {
+        doctor: {
+          select: { id: true, nameAR: true, nameEN: true, accountName: true },
+        },
+        createdBy: { select: { id: true, name: true } },
       },
-      createdBy: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  res.status(200).json({
-    status: "success",
-    message: "Data fetched successfully",
-    data: {
-      results: data.length,
-      data,
-    },
-  });
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take, // Apply limit
+      skip: queryObj.skip, // Apply pagination skip
+    });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
+    res.status(200).json({
+      status: "success",
+      message: "Data fetched successfully",
+      results: totalDocuments,
+      pagination: paginationData,
+      data: data,
+    });
+  } catch (error) {
+    // Route the error to your global error middleware
+    console.error(error);
+    next(error);
+  }
 };
 
 const addVisitReports = async (req, res) => {
@@ -161,65 +197,117 @@ const addVisitReports = async (req, res) => {
   });
 };
 
-const getMyVisitReports = async (req, res) => {
-  const data = await prisma.visitReport.findMany({
-    where: { userId: req.user.id },
-    include: {
-      visit: {
-        select: {
-          id: true,
-          date: true,
-          doctor: {
-            select: { id: true, nameAR: true, nameEN: true, accountName: true },
+const getMyVisitReports = async (req, res, next) => {
+  try {
+    // Instantiate the ApiFeatures class and apply features
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    const whereClause = {
+      ...queryObj.where,
+      userId: req.user.id,
+    };
+
+    // Get total count of documents for accurate pagination calculations
+    const totalDocuments = await prisma.visitReport.count({
+      where: whereClause,
+    });
+
+    const data = await prisma.visitReport.findMany({
+      where: whereClause,
+      include: {
+        visit: {
+          select: {
+            id: true,
+            date: true,
+            doctor: {
+              select: {
+                id: true,
+                nameAR: true,
+                nameEN: true,
+                accountName: true,
+              },
+            },
           },
-          createdBy: { select: { id: true, name: true } },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  res.status(200).json({
-    status: "success",
-    message: "Data fetched successfully",
-    data: {
-      results: data.length,
-      data,
-    },
-  });
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take, // Apply limit
+      skip: queryObj.skip, // Apply pagination skip
+    });
+    const paginationData = paginationResults(pagination, totalDocuments);
+
+    res.status(200).json({
+      status: "success",
+      message: "Data fetched successfully",
+      results: totalDocuments,
+      pagination: paginationData,
+      data: data,
+    });
+  } catch (error) {
+    // Route the error to your global error middleware
+    console.error(error);
+    next(error);
+  }
 };
 
 const getAllVisitReports = async (req, res) => {
-  // filter by rep id
-  const { repId } = req.query || null;
-  let where = {};
-  if (repId) {
-    where.userId = repId;
-  }
+  try {
+    // Instantiate the ApiFeatures class and apply features
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    const whereClause = {
+      ...queryObj.where,
+    };
 
-  const data = await prisma.visitReport.findMany({
-    where,
-    include: {
-      visit: {
-        select: {
-          id: true,
-          date: true,
-          doctor: {
-            select: { id: true, nameAR: true, nameEN: true, accountName: true },
+    // filter by rep id
+    if (req.query.createdById) {
+      whereClause.userId = req.query.createdById;
+      delete whereClause.createdById;
+    }
+
+    // Get total count of documents for accurate pagination calculations
+    const totalDocuments = await prisma.visitReport.count({
+      where: whereClause,
+    });
+
+    const data = await prisma.visitReport.findMany({
+      where: whereClause,
+      include: {
+        visit: {
+          select: {
+            id: true,
+            date: true,
+            doctor: {
+              select: {
+                id: true,
+                nameAR: true,
+                nameEN: true,
+                accountName: true,
+              },
+            },
+            createdBy: { select: { id: true, name: true } },
           },
-          createdBy: { select: { id: true, name: true } },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  res.status(200).json({
-    status: "success",
-    message: "Data fetched successfully",
-    data: {
-      results: data.length,
-      data,
-    },
-  });
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take, // Apply limit
+      skip: queryObj.skip, // Apply pagination skip
+    });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
+    res.status(200).json({
+      status: "success",
+      message: "Data fetched successfully",
+      results: totalDocuments,
+      pagination: paginationData,
+      data: data,
+    });
+  } catch (error) {
+    // Route the error to your global error middleware
+    console.error(error);
+    next(error);
+  }
 };
 
 const updateVisit = async (req, res, next) => {

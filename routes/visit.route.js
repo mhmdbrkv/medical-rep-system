@@ -20,7 +20,6 @@ router.get("/", getVisits);
 router.get("/all", allowedTo("MANAGER", "SUPERVISOR"), getAllVisits);
 router.post("/visit-reports", addVisitReports);
 router.get("/visit-reports", getMyVisitReports);
-router.get("/visit-reports", getMyVisitReports);
 router.get(
   "/all-visit-reports",
   allowedTo("MANAGER", "SUPERVISOR"),
