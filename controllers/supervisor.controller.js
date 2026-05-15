@@ -1,5 +1,6 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
+import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 const getRepDetails = async (req, res, next) => {
   try {
@@ -23,16 +24,31 @@ const getRepDetails = async (req, res, next) => {
 
 const getSupervisorTeam = async (req, res, next) => {
   try {
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+
+    const whereClause = {
+      ...queryObj.where,
+      supervisorId: req.user.id,
+    };
+
+    const totalDocuments = await prisma.user.count({ where: whereClause });
+
     const team = await prisma.user.findMany({
-      where: { supervisorId: req.user.id },
+      where: whereClause,
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      data: {
-        results: team.length,
-        data: team,
-      },
+      results: totalDocuments,
+      pagination: paginationData,
+      data: team,
     });
   } catch (err) {
     console.error(err);
@@ -42,32 +58,49 @@ const getSupervisorTeam = async (req, res, next) => {
 
 const getTeamRequests = async (req, res, next) => {
   try {
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+
     const reps = await prisma.user.findMany({
       where: { supervisorId: req.user.id },
-      select: { id: true, requests: true },
+      select: { id: true },
     });
 
     if (reps.length === 0) {
-      res.status(200).json({
+      return res.status(200).json({
         status: "success",
         message: "No requests found",
+        results: 0,
+        pagination: paginationResults(pagination, 0),
+        data: [],
       });
     }
 
+    const whereClause = {
+      ...queryObj.where,
+      userId: { in: reps.map((rep) => rep.id) },
+    };
+
+    const totalDocuments = await prisma.request.count({ where: whereClause });
+
     const data = await prisma.request.findMany({
-      where: { userId: { in: reps.map((rep) => rep.id) } },
+      where: whereClause,
       include: {
         user: { select: { id: true, name: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      data: {
-        results: data.length,
-        data,
-      },
+      results: totalDocuments,
+      pagination: paginationData,
+      data,
     });
   } catch (error) {
     console.error(error);

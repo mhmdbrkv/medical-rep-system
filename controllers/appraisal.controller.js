@@ -1,5 +1,6 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
+import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 const addAppraisal = async (req, res, next) => {
   const {
@@ -78,7 +79,14 @@ const addAppraisal = async (req, res, next) => {
 };
 const getAppraisals = async (req, res, next) => {
   try {
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    const whereClause = { ...queryObj.where };
+
+    const totalDocuments = await prisma.appraisal.count({ where: whereClause });
+
     const appraisals = await prisma.appraisal.findMany({
+      where: whereClause,
       include: {
         rep: {
           select: {
@@ -96,11 +104,18 @@ const getAppraisals = async (req, res, next) => {
         },
         manager: { select: { id: true, name: true, email: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
     res.status(200).json({
       success: true,
-      data: { results: appraisals.length, appraisals },
+      results: totalDocuments,
+      pagination: paginationData,
+      data: appraisals,
     });
   } catch (error) {
     console.error(error);

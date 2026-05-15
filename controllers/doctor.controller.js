@@ -1,5 +1,6 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
+import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 // Add new doctor
 const addNewDoctor = async (req, res, next) => {
@@ -44,21 +45,38 @@ const addNewDoctor = async (req, res, next) => {
 };
 
 // Get all doctors
-const getAllDoctors = async (req, res) => {
-  let filter = {};
-  const { subRegion } = req.query;
+const getAllDoctors = async (req, res, next) => {
+  try {
+    const { subRegion } = req.query;
 
-  if (subRegion) filter.subRegion = subRegion;
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
-  const doctors = await prisma.doctor.findMany({ where: { ...filter } });
-  res.status(200).json({
-    status: "success",
-    message: "Doctors fetched successfully",
-    data: {
-      results: doctors.length,
-      doctors,
-    },
-  });
+    const whereClause = { ...queryObj.where };
+    if (subRegion) whereClause.subRegion = subRegion;
+
+    const totalDocuments = await prisma.doctor.count({ where: whereClause });
+
+    const doctors = await prisma.doctor.findMany({
+      where: whereClause,
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
+    });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
+    res.status(200).json({
+      status: "success",
+      message: "Doctors fetched successfully",
+      results: totalDocuments,
+      pagination: paginationData,
+      data: doctors,
+    });
+  } catch (error) {
+    console.error(error);
+    next(new ApiError("Failed to fetch doctors", 500));
+  }
 };
 
 // Get One Doctor by id

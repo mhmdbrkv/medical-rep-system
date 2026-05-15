@@ -1,26 +1,40 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { uploadDocumentToCloudinary } from "../utils/cloudinary.js";
+import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 // Requests Controllers
 const getMyRequests = async (req, res, next) => {
   try {
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+
+    const whereClause = {
+      ...queryObj.where,
+      userId: req.user.id,
+    };
+
+    const totalDocuments = await prisma.request.count({ where: whereClause });
+
     const data = await prisma.request.findMany({
-      where: { userId: req.user.id },
+      where: whereClause,
       include: {
         user: { select: { id: true, name: true } },
         doctors: { select: { id: true, nameAR: true, nameEN: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
 
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      data: {
-        results: data.length,
-        data,
-      },
+      results: totalDocuments,
+      pagination: paginationData,
+      data: data,
     });
   } catch (error) {
     console.error(error);

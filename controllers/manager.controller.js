@@ -3,6 +3,7 @@ import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { validateAndDetectFiles } from "../utils/fileValidator.js";
 import { uploadDocumentToCloudinary } from "../utils/cloudinary.js";
+import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 // Create user
 const createUser = async (req, res, next) => {
@@ -153,69 +154,73 @@ const createUser = async (req, res, next) => {
 };
 
 // Get all users
-const getAllUsers = async (req, res) => {
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      role: true,
-      dateOfBirth: true,
-      dateOfRecruitment: true,
-      department: true,
-      location: true,
-      bio: true,
-      educationBackground: true,
-      iqamaNumber: true,
-      passportNumber: true,
-      resume: true,
-      certificates: true,
-      lastLogin: true,
-      isActive: true,
-      profileImage: true,
+const getAllUsers = async (req, res, next) => {
+  try {
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    const whereClause = { ...queryObj.where };
 
-      leaveStartDate: true,
-      leaveEndDate: true,
-      leaveDaysCountTotal: true,
+    const totalDocuments = await prisma.user.count({ where: whereClause });
 
-      regions: true,
-      subRegion: true,
-      subRegionId: true,
+    const users = await prisma.user.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        dateOfBirth: true,
+        dateOfRecruitment: true,
+        department: true,
+        location: true,
+        bio: true,
+        educationBackground: true,
+        iqamaNumber: true,
+        passportNumber: true,
+        resume: true,
+        certificates: true,
+        lastLogin: true,
+        isActive: true,
+        profileImage: true,
 
-      supervisorId: true,
-      managerId: true,
-      supervisor: true,
-      manager: true,
-      reps: true,
-      visits: true,
-      requests: true,
+        leaveStartDate: true,
+        leaveEndDate: true,
+        leaveDaysCountTotal: true,
 
-      visitReports: true,
-      plans: true,
-      users: true,
+        regions: { select: { id: true, name: true } },
+        subRegion: {
+          select: {
+            id: true,
+            name: true,
+            region: { select: { id: true, name: true } },
+          },
+        },
 
-      coachings: true,
-      repCoachings: true,
+        supervisor: { select: { id: true, name: true } },
+        manager: { select: { id: true, name: true } },
 
-      appraisalsByManager: true,
-      appraisalsForRep: true,
-      forecasts: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
+    });
 
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+    const paginationData = paginationResults(pagination, totalDocuments);
 
-  res.status(200).json({
-    status: "success",
-    message: "Users fetched successfully",
-    data: {
-      results: users.length,
-      users,
-    },
-  });
+    res.status(200).json({
+      status: "success",
+      message: "Users fetched successfully",
+      results: totalDocuments,
+      pagination: paginationData,
+      data: users,
+    });
+  } catch (error) {
+    console.error(error);
+    next(new ApiError("Failed to fetch users", 500));
+  }
 };
 
 // Get user details
@@ -227,10 +232,16 @@ const getUserDetails = async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
-        supervisor: true,
-        manager: true,
-        subRegion: true,
-        appraisalsForRep: true, // Fetching these directly via relation
+        supervisor: { select: { id: true, name: true } },
+        manager: { select: { id: true, name: true } },
+        subRegion: {
+          select: {
+            id: true,
+            name: true,
+            region: { select: { id: true, name: true } },
+          },
+        },
+        appraisalsForRep: { select: { id: true } }, // Fetching these directly via relation
       },
     });
 
@@ -352,14 +363,29 @@ const deleteOneUserById = async (req, res) => {
 const getManagerTeam = async (req, res, next) => {
   let filter = { isActive: true };
   try {
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+
     if (
       req.query?.role &&
       ["MEDICAL_REP", "SUPERVISOR"].includes(req.query?.role)
     ) {
-      filter = { role: req.query?.role };
+      filter.role = req.query?.role;
     }
+
+    const whereClause = {
+      ...queryObj.where,
+      ...filter,
+      managerId: req.user.id,
+    };
+
+    const totalDocuments = await prisma.user.count({ where: whereClause });
+
     const team = await prisma.user.findMany({
-      where: { managerId: req.user.id, ...filter },
+      where: whereClause,
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
     });
 
     let supervisorsCount = 0;
@@ -372,15 +398,16 @@ const getManagerTeam = async (req, res, next) => {
       }
     });
 
+    const paginationData = paginationResults(pagination, totalDocuments);
+
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      data: {
-        totalMembers: team.length,
-        supervisorsCount,
-        repsCount,
-        data: team,
-      },
+      results: totalDocuments,
+      pagination: paginationData,
+      supervisorsCount,
+      repsCount,
+      data: team,
     });
   } catch (err) {
     console.error(err);
@@ -390,32 +417,58 @@ const getManagerTeam = async (req, res, next) => {
 
 const getTeamRequests = async (req, res, next) => {
   try {
+    let role = "MEDICAL_REP";
+
+    if (
+      req?.query?.role &&
+      ["MEDICAL_REP", "SUPERVISOR"].includes(req?.query?.role)
+    ) {
+      role = req?.query?.role;
+    }
+
+    const apiFeatures = new ApiFeatures(req?.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req?.query);
+
     const users = await prisma.user.findMany({
-      where: { managerId: req.user.id },
-      select: { id: true, requests: true },
+      where: { managerId: req?.user?.id, role },
+      select: { id: true },
     });
 
     if (users.length === 0) {
-      res.status(200).json({
+      return res.status(200).json({
         status: "success",
         message: "No requests found",
+        results: 0,
+        pagination: paginationResults(pagination, 0),
+        data: [],
       });
     }
 
+    const whereClause = {
+      ...queryObj?.where,
+      userId: { in: users.map((rep) => rep.id) },
+    };
+
+    const totalDocuments = await prisma.request.count({ where: whereClause });
+
     const data = await prisma.request.findMany({
-      where: { userId: { in: users.map((rep) => rep.id) } },
+      where: whereClause,
       include: {
         user: { select: { id: true, name: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: queryObj?.orderBy || { createdAt: "desc" },
+      take: queryObj?.take,
+      skip: queryObj?.skip,
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      data: {
-        results: data.length,
-        data,
-      },
+      results: totalDocuments,
+      pagination: paginationData,
+      data,
     });
   } catch (error) {
     console.error(error);

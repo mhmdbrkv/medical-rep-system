@@ -2,6 +2,7 @@ import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import xlsx from "xlsx";
 import fs from "fs/promises";
+import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 const addSale = async (req, res, next) => {
   try {
@@ -88,14 +89,15 @@ const getAllSales = async (req, res, next) => {
   try {
     const { date, sheetName } = req.query;
 
-    // 1. Always initialize the where clause with common filters
-    let whereClause = {};
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+
+    let whereClause = { ...queryObj.where };
 
     if (sheetName) {
       whereClause.sheetName = sheetName;
     }
 
-    // 2. Add date range only if date is provided
     if (date) {
       const parsedDate = new Date(date);
 
@@ -109,24 +111,31 @@ const getAllSales = async (req, res, next) => {
       const endOfDay = new Date(parsedDate);
       endOfDay.setUTCHours(23, 59, 59, 999);
 
-      // Add to existing whereClause instead of overwriting it
       whereClause.orderDate = {
         gte: startOfDay,
         lte: endOfDay,
       };
+
+      delete whereClause.date;
     }
+
+    const totalDocuments = await prisma.sales.count({ where: whereClause });
 
     const sales = await prisma.sales.findMany({
       where: whereClause,
       include: { product: true },
-      // Good practice: always sort sales by date
-      orderBy: { orderDate: "desc" },
+      orderBy: queryObj.orderBy || { orderDate: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
 
     res.status(200).json({
       status: "success",
-      length: sales.length,
-      data: { sales },
+      results: totalDocuments,
+      pagination: paginationData,
+      data: sales,
     });
   } catch (error) {
     console.error("Sales Fetch Error:", error);
@@ -134,13 +143,14 @@ const getAllSales = async (req, res, next) => {
   }
 };
 
-// get rep sales in dashboard
 const getRepsSales = async (req, res, next) => {
   try {
     const { date, sheetName } = req.query;
 
-    // Build the where clause conditionally
-    let whereClause = {};
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+
+    let whereClause = { ...queryObj.where };
 
     if (sheetName) {
       whereClause.sheetName = sheetName;
@@ -153,20 +163,17 @@ const getRepsSales = async (req, res, next) => {
         return next(new ApiError("Invalid date format provided", 400));
       }
 
-      // Match the full day by using a range instead of exact equality
       const startOfDay = new Date(parsedDate);
       startOfDay.setUTCHours(0, 0, 0, 0);
 
       const endOfDay = new Date(parsedDate);
       endOfDay.setUTCHours(23, 59, 59, 999);
 
-      whereClause = {
-        orderDate: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-        sheetName,
+      whereClause.orderDate = {
+        gte: startOfDay,
+        lte: endOfDay,
       };
+      delete whereClause.date;
     }
 
     // 1. Get Rep and SubRegion
@@ -186,23 +193,27 @@ const getRepsSales = async (req, res, next) => {
 
     const namesArray = pharmacyNames.map((p) => p.name);
 
+    whereClause.customer = { in: namesArray };
+
+    const totalDocuments = await prisma.sales.count({ where: whereClause });
+
     const sales = await prisma.sales.findMany({
-      where: {
-        ...whereClause,
-        customer: { in: namesArray },
-      },
+      where: whereClause,
       include: {
         product: true,
       },
-      orderBy: { orderDate: "desc" },
+      orderBy: queryObj.orderBy || { orderDate: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
 
     res.status(200).json({
       status: "success",
-      length: sales.length,
-      data: {
-        sales,
-      },
+      results: totalDocuments,
+      pagination: paginationData,
+      data: sales,
     });
   } catch (error) {
     console.error(error);
@@ -215,8 +226,10 @@ const getRepsSalesByRepId = async (req, res, next) => {
     const { repId } = req.params;
     const { date, sheetName } = req.query;
 
-    // Build the where clause conditionally
-    let whereClause = {};
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+
+    let whereClause = { ...queryObj.where };
 
     if (sheetName) {
       whereClause.sheetName = sheetName;
@@ -229,20 +242,17 @@ const getRepsSalesByRepId = async (req, res, next) => {
         return next(new ApiError("Invalid date format provided", 400));
       }
 
-      // Match the full day by using a range instead of exact equality
       const startOfDay = new Date(parsedDate);
       startOfDay.setUTCHours(0, 0, 0, 0);
 
       const endOfDay = new Date(parsedDate);
       endOfDay.setUTCHours(23, 59, 59, 999);
 
-      whereClause = {
-        orderDate: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-        sheetName,
+      whereClause.orderDate = {
+        gte: startOfDay,
+        lte: endOfDay,
       };
+      delete whereClause.date;
     }
 
     // 1. Get Rep and SubRegion
@@ -262,23 +272,27 @@ const getRepsSalesByRepId = async (req, res, next) => {
 
     const namesArray = pharmacyNames.map((p) => p.name);
 
+    whereClause.customer = { in: namesArray };
+
+    const totalDocuments = await prisma.sales.count({ where: whereClause });
+
     const sales = await prisma.sales.findMany({
-      where: {
-        ...whereClause,
-        customer: { in: namesArray },
-      },
+      where: whereClause,
       include: {
         product: true,
       },
-      orderBy: { orderDate: "desc" },
+      orderBy: queryObj.orderBy || { orderDate: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
 
     res.status(200).json({
       status: "success",
-      length: sales.length,
-      data: {
-        sales,
-      },
+      results: totalDocuments,
+      pagination: paginationData,
+      data: sales,
     });
   } catch (error) {
     console.error(error);

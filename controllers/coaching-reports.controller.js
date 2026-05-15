@@ -1,5 +1,6 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
+import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 const addCoachingReport = async (req, res, next) => {
   try {
@@ -101,10 +102,18 @@ const responseToCoachingReport = async (req, res, next) => {
 
 const getMyCoachingReport = async (req, res, next) => {
   try {
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+
+    const whereClause = {
+      ...queryObj.where,
+      createdById: req.user.id,
+    };
+
+    const totalDocuments = await prisma.coachingReport.count({ where: whereClause });
+
     const data = await prisma.coachingReport.findMany({
-      where: {
-        createdById: req.user.id,
-      },
+      where: whereClause,
       select: {
         id: true,
         visitDate: true,
@@ -145,12 +154,18 @@ const getMyCoachingReport = async (req, res, next) => {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      results: data.length,
+      results: totalDocuments,
+      pagination: paginationData,
       data: data,
     });
   } catch (error) {
@@ -161,7 +176,14 @@ const getMyCoachingReport = async (req, res, next) => {
 
 const getAllCoachingReport = async (req, res, next) => {
   try {
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    const whereClause = { ...queryObj.where };
+
+    const totalDocuments = await prisma.coachingReport.count({ where: whereClause });
+
     const data = await prisma.coachingReport.findMany({
+      where: whereClause,
       select: {
         id: true,
         visitDate: true,
@@ -202,12 +224,18 @@ const getAllCoachingReport = async (req, res, next) => {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      results: data.length,
+      results: totalDocuments,
+      pagination: paginationData,
       data: data,
     });
   } catch (error) {
@@ -218,10 +246,18 @@ const getAllCoachingReport = async (req, res, next) => {
 
 const getRepCoachingReport = async (req, res, next) => {
   try {
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+
+    const whereClause = {
+      ...queryObj.where,
+      repId: req.user.id,
+    };
+
+    const totalDocuments = await prisma.coachingReport.count({ where: whereClause });
+
     const data = await prisma.coachingReport.findMany({
-      where: {
-        repId: req.user.id,
-      },
+      where: whereClause,
       select: {
         id: true,
         visitDate: true,
@@ -262,12 +298,18 @@ const getRepCoachingReport = async (req, res, next) => {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: queryObj.orderBy || { createdAt: "desc" },
+      take: queryObj.take,
+      skip: queryObj.skip,
     });
+
+    const paginationData = paginationResults(pagination, totalDocuments);
+
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
-      results: data.length,
+      results: totalDocuments,
+      pagination: paginationData,
       data: data,
     });
   } catch (error) {
