@@ -73,6 +73,7 @@ const getVisits = async (req, res, next) => {
         doctor: {
           select: { id: true, nameAR: true, nameEN: true, accountName: true },
         },
+        createdBy: { select: { id: true, name: true } },
       },
       orderBy: queryObj.orderBy || { createdAt: "desc" },
       take: queryObj.take, // Apply limit
