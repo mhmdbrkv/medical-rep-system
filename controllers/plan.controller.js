@@ -94,6 +94,9 @@ const getMyPlans = async (req, res, next) => {
 
     const data = await prisma.plan.findMany({
       where: whereClause,
+      include: {
+        createdBy: { select: { id: true, name: true } },
+      },
       orderBy: queryObj.orderBy || { createdAt: "desc" },
       take: queryObj.take, // Apply limit
       skip: queryObj.skip, // Apply pagination skip
