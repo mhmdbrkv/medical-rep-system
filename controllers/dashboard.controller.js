@@ -57,7 +57,9 @@ const getRepsDashboard = async (req, res, next) => {
       prisma.visit.findMany({
         where: { userId: userId, date: { gte: startOfToday, lte: endOfToday } },
         include: {
-          doctor: { select: { id: true, nameAR: true, nameEN: true } },
+          doctor: {
+            select: { id: true, nameAR: true, nameEN: true, accountName: true },
+          },
           createdBy: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: "desc" },
