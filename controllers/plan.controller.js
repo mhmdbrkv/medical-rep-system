@@ -16,6 +16,22 @@ const createPlan = async (req, res, next) => {
     doctorsWithDates,
   } = req.body;
 
+  const existingPlan = await prisma.plan.findFirst({
+    where: {
+      title,
+      createdById: req.user.id,
+    },
+  });
+
+  if (existingPlan) {
+    return next(
+      new ApiError(
+        "You already have a plan with this title. Please choose a different title.",
+        400,
+      ),
+    );
+  }
+
   const doctorIds = doctorsWithDates.map((d) => d.doctorId);
 
   const doctorsInDB = await prisma.doctor.findMany({
