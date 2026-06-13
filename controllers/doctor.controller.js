@@ -47,7 +47,22 @@ const addNewDoctor = async (req, res, next) => {
 // Get all doctors
 const getAllDoctors = async (req, res, next) => {
   try {
-    const { subRegion } = req.query;
+    const { subRegion, paginate } = req.query;
+
+    if (paginate === "false") {
+      const doctors = await prisma.doctor.findMany({
+        where: subRegion ? { subRegion } : {},
+        orderBy: { createdAt: "desc" },
+      });
+
+      return res.status(200).json({
+        status: "success",
+        message: "Doctors fetched successfully",
+        results: doctors.length,
+        pagination: null,
+        data: doctors,
+      });
+    }
 
     const apiFeatures = new ApiFeatures(req.query);
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
