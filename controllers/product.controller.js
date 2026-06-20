@@ -17,6 +17,22 @@ const addProduct = async (req, res, next) => {
 
 const getAllProducts = async (req, res, next) => {
   try {
+    const { paginate } = req.query;
+
+    if (paginate === "false") {
+      const products = await prisma.products.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+
+      return res.status(200).json({
+        status: "success",
+        message: "Products fetched successfully",
+        results: products.length,
+        pagination: null,
+        data: products,
+      });
+    }
+
     const apiFeatures = new ApiFeatures(req.query);
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
     const whereClause = { ...queryObj.where };
