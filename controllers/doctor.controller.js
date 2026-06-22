@@ -4,6 +4,32 @@ import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 // Add new doctor
 const addNewDoctor = async (req, res, next) => {
+  // bulk create many doctors
+  // const data = req.body.map((doctor) => ({
+  //   nameAR: String(doctor.nameAR).trim(),
+  //   nameEN: String(doctor.nameEN).trim(),
+  //   email: String(doctor.email).trim(),
+  //   accountName: String(doctor.accountName).trim(),
+  //   phone: String(doctor.phone).trim(),
+  //   grade: String(doctor.grade).trim(),
+  //   avgPatientsPerDay: Number(doctor.avgPatientsPerDay || 0) || null,
+  //   specialty: String(doctor.specialty).trim(),
+  //   LicenseNumber: String(doctor.LicenseNumber).trim() || null,
+  //   subRegion: String(doctor.subRegion).trim(),
+  // }));
+
+  // const newDoctors = await prisma.doctor.createMany({
+  //   data,
+  // });
+
+  // console.log("New doctors added:", data.length);
+
+  // res.status(201).json({
+  //   status: "success",
+  //   message: "Doctors added successfully",
+  //   results: data.length,
+  // });
+
   if (!req.body) {
     return next(new ApiError("Please provide doctor data", 400));
   }
