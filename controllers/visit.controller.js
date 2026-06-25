@@ -26,6 +26,7 @@ const scheduleVisit = async (req, res) => {
 
 const getVisits = async (req, res, next) => {
   try {
+    let { paginate } = req.query;
     let dateFilter = undefined;
     if (req.query.date) {
       const clientDate = new Date(req.query.date);
@@ -50,6 +51,30 @@ const getVisits = async (req, res, next) => {
       );
 
       dateFilter = { gte: startOfTheMonth, lt: endOfTheMonth };
+    }
+
+    if (paginate === "false") {
+      const data = await prisma.visit.findMany({
+        where: {
+          userId: req.user.id,
+          ...(dateFilter && { date: dateFilter }),
+        },
+        include: {
+          doctor: {
+            select: { id: true, nameAR: true, nameEN: true, accountName: true },
+          },
+          createdBy: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return res.status(200).json({
+        status: "success",
+        message: "Data fetched successfully",
+        results: data.length,
+        pagination: null,
+        data: data,
+      });
     }
 
     // Instantiate the ApiFeatures class and apply features
@@ -98,15 +123,10 @@ const getVisits = async (req, res, next) => {
 
 const getAllVisits = async (req, res, next) => {
   try {
+    let { paginate } = req.query;
+    let whereClause = {};
     const clientDate = req.query.date ? new Date(req.query.date) : null;
     const { createdById } = req.query || null;
-
-    // Instantiate the ApiFeatures class and apply features
-    const apiFeatures = new ApiFeatures(req.query);
-    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
-    const whereClause = {
-      ...queryObj.where,
-    };
 
     if (clientDate && isNaN(clientDate.getTime())) {
       throw new ApiError("Invalid date format provided", 400);
@@ -129,6 +149,34 @@ const getAllVisits = async (req, res, next) => {
         lte: endOfToday,
       };
     }
+
+    if (paginate === "false") {
+      const data = await prisma.visit.findMany({
+        where: whereClause,
+        include: {
+          doctor: {
+            select: { id: true, nameAR: true, nameEN: true, accountName: true },
+          },
+          createdBy: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return res.status(200).json({
+        status: "success",
+        message: "Data fetched successfully",
+        results: data.length,
+        pagination: null,
+        data: data,
+      });
+    }
+
+    // Instantiate the ApiFeatures class and apply features
+    const apiFeatures = new ApiFeatures(req.query);
+    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    whereClause = {
+      ...queryObj.where,
+    };
 
     // Get total count of documents for accurate pagination calculations
     const totalDocuments = await prisma.visit.count({ where: whereClause });
@@ -200,6 +248,39 @@ const addVisitReports = async (req, res) => {
 
 const getMyVisitReports = async (req, res, next) => {
   try {
+    let { paginate } = req.query;
+
+    if (paginate === "false") {
+      const data = await prisma.visitReport.findMany({
+        where: { userId: req.user.id },
+        include: {
+          visit: {
+            select: {
+              id: true,
+              date: true,
+              doctor: {
+                select: {
+                  id: true,
+                  nameAR: true,
+                  nameEN: true,
+                  accountName: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return res.status(200).json({
+        status: "success",
+        message: "Data fetched successfully",
+        results: data.length,
+        pagination: null,
+        data: data,
+      });
+    }
+
     // Instantiate the ApiFeatures class and apply features
     const apiFeatures = new ApiFeatures(req.query);
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
@@ -253,6 +334,39 @@ const getMyVisitReports = async (req, res, next) => {
 
 const getAllVisitReports = async (req, res) => {
   try {
+    let { paginate } = req.query;
+
+    if (paginate === "false") {
+      const data = await prisma.visitReport.findMany({
+        include: {
+          visit: {
+            select: {
+              id: true,
+              date: true,
+              doctor: {
+                select: {
+                  id: true,
+                  nameAR: true,
+                  nameEN: true,
+                  accountName: true,
+                },
+              },
+              createdBy: { select: { id: true, name: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return res.status(200).json({
+        status: "success",
+        message: "Data fetched successfully",
+        results: data.length,
+        pagination: null,
+        data: data,
+      });
+    }
+
     // Instantiate the ApiFeatures class and apply features
     const apiFeatures = new ApiFeatures(req.query);
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
