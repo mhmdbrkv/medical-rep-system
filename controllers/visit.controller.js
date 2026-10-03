@@ -3,25 +3,58 @@ import { ApiError } from "../utils/apiError.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 // Visits and Visit Reports Controllers
-const scheduleVisit = async (req, res) => {
-  const { samples, date, time, doctorId, notes } = req.body;
-  const userId = req.user.id;
-
-  const data = await prisma.visit.create({
-    data: {
+const scheduleVisit = async (req, res, next) => {
+  try {
+    const {
       samples,
-      date: new Date(date),
+      date,
       time,
       doctorId,
       notes,
-      userId,
-    },
-  });
-  res.status(201).json({
-    status: "success",
-    message: "Data created successfully",
-    data: data,
-  });
+      visitType,
+      medicalRepId,
+      supervisorId,
+    } = req.body;
+
+    const targetUserId =
+      req.user.role === "MANAGER" && medicalRepId ? medicalRepId : req.user.id;
+
+    if (req.user.role === "MANAGER" && medicalRepId) {
+      const rep = await prisma.user.findUnique({
+        where: { id: medicalRepId },
+        select: { id: true, managerId: true, supervisorId: true },
+      });
+
+      if (!rep || rep.managerId !== req.user.id) {
+        return next(new ApiError("Selected rep is not under your management", 400));
+      }
+
+      if (supervisorId && rep.supervisorId !== supervisorId) {
+        return next(new ApiError("Selected supervisor does not match the rep", 400));
+      }
+    }
+
+    const data = await prisma.visit.create({
+      data: {
+        samples: Array.isArray(samples) ? samples : [],
+        date: new Date(date),
+        time,
+        doctorId,
+        notes,
+        userId: targetUserId,
+        visitType: visitType ? String(visitType).toUpperCase() : "ROUTINE",
+      },
+    });
+
+    res.status(201).json({
+      status: "success",
+      message: "Data created successfully",
+      data: data,
+    });
+  } catch (error) {
+    console.error(error);
+    next(new ApiError("Failed to schedule visit", 500));
+  }
 };
 
 const getVisits = async (req, res, next) => {
